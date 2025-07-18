@@ -176,6 +176,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 addOrderBtn.disabled = false;
                 addOrderBtn.classList.remove('opacity-50', 'cursor-not-allowed');
             }
+            if(customerSearchInput){
+                customerSearchInput.disabled = false;
+            }
         });
     }
 
