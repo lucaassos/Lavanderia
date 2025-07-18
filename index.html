@@ -126,54 +126,50 @@
 
     <!-- Modal para Nova Ordem de Serviço -->
     <div id="new-order-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center z-50 p-4">
-        <div class="bg-gray-800 border border-lime-500/20 rounded-2xl shadow-2xl p-8 w-full max-w-lg transform transition-all scale-95 opacity-0" id="modal-content">
+        <div class="bg-gray-800 border border-lime-500/20 rounded-2xl shadow-2xl p-8 w-full max-w-2xl transform transition-all scale-95 opacity-0" id="modal-content">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-2xl font-bold text-gray-200">Nova Ordem de Serviço</h3>
                 <button id="close-modal-btn" class="text-gray-500 hover:text-gray-300 text-3xl">&times;</button>
             </div>
-            <form id="new-order-form" class="space-y-4">
-                <div class="flex items-end gap-2">
-                    <div class="flex-grow relative">
+            <form id="new-order-form" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
                         <label for="customer-search-input" class="block text-sm font-medium text-gray-400">Cliente</label>
-                        <input type="text" id="customer-search-input" placeholder="Digite para buscar um cliente..." autocomplete="off" required class="w-full px-4 py-2 mt-1 text-gray-200 bg-gray-700 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-lime-500">
-                        <input type="hidden" id="selected-customer-id">
-                        <div id="customer-search-results" class="hidden absolute w-full mt-1 bg-gray-900 border border-gray-600 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
-                            <!-- Resultados da busca de clientes aparecem aqui -->
+                        <div class="flex items-center gap-2 mt-1">
+                            <div class="flex-grow relative">
+                                <input type="text" id="customer-search-input" placeholder="Digite para buscar..." autocomplete="off" required class="w-full px-4 py-2 text-gray-200 bg-gray-700 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-lime-500">
+                                <input type="hidden" id="selected-customer-id">
+                                <div id="customer-search-results" class="hidden absolute w-full mt-1 bg-gray-900 border border-gray-600 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto"></div>
+                            </div>
+                            <a href="clientes.html" title="Cadastrar Novo Cliente" class="flex-shrink-0 bg-gray-600 text-gray-200 h-10 w-10 flex items-center justify-center rounded-lg hover:bg-gray-500 font-semibold transition-colors text-xl">+</a>
                         </div>
                     </div>
-                    <a href="clientes.html" title="Cadastrar Novo Cliente" class="flex-shrink-0 bg-gray-600 text-gray-200 h-11 w-11 flex items-center justify-center rounded-lg hover:bg-gray-500 font-semibold transition-colors text-xl">+</a>
+                    <div>
+                        <label for="client-phone" class="block text-sm font-medium text-gray-400">Telefone</label>
+                        <input type="tel" id="client-phone" readonly class="w-full px-4 py-2 mt-1 text-gray-400 bg-gray-900/50 border border-gray-600 rounded-lg shadow-sm">
+                    </div>
                 </div>
+                
+                <div id="service-items-container" class="space-y-4 pt-4 border-t border-gray-700">
+                    <!-- Itens de serviço serão injetados aqui -->
+                </div>
+
+                <div class="flex justify-between items-center pt-4">
+                    <button type="button" id="add-service-btn" class="flex items-center gap-2 bg-gray-600 text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-500 font-semibold transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" /></svg>
+                        Adicionar Serviço
+                    </button>
+                    <div class="text-right">
+                        <p class="text-sm font-medium text-gray-400">VALOR TOTAL</p>
+                        <p id="total-value-display" class="text-3xl font-bold text-lime-400">R$ 0,00</p>
+                    </div>
+                </div>
+
                 <div>
-                    <label for="client-phone" class="block text-sm font-medium text-gray-400">Telefone</label>
-                    <input type="tel" id="client-phone" readonly class="w-full px-4 py-2 mt-1 text-gray-400 bg-gray-900/50 border border-gray-600 rounded-lg shadow-sm">
+                    <label for="observations" class="block text-sm font-medium text-gray-400">Observações Gerais</label>
+                    <textarea id="observations" rows="2" class="w-full px-4 py-2 mt-1 text-gray-200 bg-gray-700 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-lime-500"></textarea>
                 </div>
-                <div>
-                    <label for="service-type" class="block text-sm font-medium text-gray-400">Tipo de Serviço</label>
-                    <select id="service-type" required class="w-full px-4 py-2 mt-1 text-gray-200 bg-gray-700 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-lime-500">
-                        <option value="" data-price="0">Selecione um serviço</option>
-                        <option value="Higienização Completa" data-price="60">Higienização Completa</option>
-                        <option value="Higienização Premium" data-price="80">Higienização Premium</option>
-                        <option value="Higienização de Boné" data-price="40">Higienização de Boné</option>
-                        <option value="Higienização de Bolsa" data-price="70">Higienização de Bolsa</option>
-                        <option value="Reparo de Pintura ou Tecido" data-price="150">Reparo de Pintura ou Tecido</option>
-                        <option value="Pintura de Midsole" data-price="100">Pintura de Midsole</option>
-                        <option value="Impermeabilização" data-price="35">Impermeabilização</option>
-                        <option value="Outro" data-price="0">Outro Valor</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="sneaker-model" class="block text-sm font-medium text-gray-400">Modelo do Tênis / Item</label>
-                    <input type="text" id="sneaker-model" required class="w-full px-4 py-2 mt-1 text-gray-200 bg-gray-700 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-lime-500">
-                </div>
-                 <div>
-                    <label for="service-value" class="block text-sm font-medium text-gray-400">Valor (R$)</label>
-                    <input type="number" id="service-value" step="0.01" required class="w-full px-4 py-2 mt-1 text-gray-200 bg-gray-700 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-lime-500">
-                </div>
-                <div>
-                    <label for="observations" class="block text-sm font-medium text-gray-400">Observações</label>
-                    <textarea id="observations" rows="3" class="w-full px-4 py-2 mt-1 text-gray-200 bg-gray-700 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-lime-500"></textarea>
-                </div>
-                <div class="flex justify-end pt-4 gap-4">
+                <div class="flex justify-end pt-6 gap-4 border-t border-gray-700">
                     <button type="button" id="cancel-modal-btn" class="bg-gray-600 text-gray-200 px-6 py-2 rounded-lg hover:bg-gray-500 font-semibold transition-colors">Cancelar</button>
                     <button type="submit" class="btn-gradient text-gray-900 px-6 py-2 rounded-lg hover:opacity-90 font-semibold shadow-md transition-opacity">Salvar Ordem</button>
                 </div>
