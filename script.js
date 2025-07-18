@@ -64,6 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const newOrderForm = document.getElementById('new-order-form');
     const customerSelect = document.getElementById('customer-select');
     const clientPhoneInput = document.getElementById('client-phone');
+    const addNewCustomerFromOrderBtn = document.getElementById('add-new-customer-from-order-btn');
 
     // Seção de Relatórios
     const startDateInput = document.getElementById('start-date');
@@ -141,6 +142,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if(customersBtn) customersBtn.addEventListener('click', () => openModal(customersModal, customersModalContent));
     if(closeCustomersModalBtn) closeCustomersModalBtn.addEventListener('click', () => closeModal(customersModal, customersModalContent));
+    
+    // Botão "+" para adicionar cliente de dentro da tela de nova ordem
+    if(addNewCustomerFromOrderBtn) addNewCustomerFromOrderBtn.addEventListener('click', () => openModal(customersModal, customersModalContent));
 
     function showConfirm(message, callback) {
         confirmModalText.textContent = message;
@@ -187,7 +191,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function populateCustomersDropdown() {
-        customerSelect.innerHTML = '<option value="" disabled selected>Selecione um cliente</option>';
+        const currentVal = customerSelect.value;
+        customerSelect.innerHTML = '<option value="">Selecione um cliente</option>';
         allCustomersCache.forEach(customer => {
             const option = document.createElement('option');
             option.value = customer.id;
@@ -195,6 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
             option.dataset.phone = customer.phone;
             customerSelect.appendChild(option);
         });
+        customerSelect.value = currentVal;
     }
 
     customerSelect.addEventListener('change', (e) => {
@@ -214,8 +220,17 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         try {
-            await addDoc(collection(db, "customers"), newCustomerData);
+            const docRef = await addDoc(collection(db, "customers"), newCustomerData);
             newCustomerForm.reset();
+            closeModal(customersModal, customersModalContent); // Fecha o modal de clientes
+            
+            // Aguarda um instante para o onSnapshot atualizar a lista e então seleciona o novo cliente
+            setTimeout(() => {
+                customerSelect.value = docRef.id;
+                // Dispara o evento 'change' para atualizar o campo de telefone
+                customerSelect.dispatchEvent(new Event('change'));
+            }, 500);
+
         } catch (error) {
             console.error("Erro ao salvar cliente:", error);
             alert("Erro ao salvar cliente.");
