@@ -5,7 +5,6 @@
 */
 
 // --- IMPORTAÇÕES DO FIREBASE (Sintaxe Moderna v9+) ---
-// Importamos apenas as funções que vamos usar dos SDKs do Firebase.
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { 
     getAuth, 
@@ -22,24 +21,30 @@ import {
     doc, 
     updateDoc, 
     getDoc, 
+    deleteDoc, // Importação para exclusão
     Timestamp,
-    onSnapshot, // Usaremos para atualizações em tempo real
+    onSnapshot,
     orderBy
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 
 // --- INICIALIZAÇÃO E CONFIGURAÇÃO DO FIREBASE ---
-// !!! IMPORTANTE !!!
-// Cole aqui o objeto de configuração do seu projeto Firebase.
-// Você pode encontrar isso nas configurações do seu projeto no console do Firebase.
 const firebaseConfig = {
-  apiKey: "AIzaSyBgIySTsWkoylC2WEUgF_EGzt3JVy3UHw0",
-  authDomain: "lavanderia-clean-up.firebaseapp.com",
-  projectId: "lavanderia-clean-up",
-  storageBucket: "lavanderia-clean-up.firebasestorage.app",
-  messagingSenderId: "6383817947",
-  appId: "1:6383817947:web:9dca3543ad299afcd628fe",
+
+  apiKey: "AIzaSyBgIySTsWkoylC2WEUgF_EGzt3JVy3UHw0",
+
+  authDomain: "lavanderia-clean-up.firebaseapp.com",
+
+  projectId: "lavanderia-clean-up",
+
+  storageBucket: "lavanderia-clean-up.firebasestorage.app",
+
+  messagingSenderId: "6383817947",
+
+  appId: "1:6383817947:web:9dca3543ad299afcd628fe",
+
 };
+
 
 
 const app = initializeApp(firebaseConfig);
@@ -52,30 +57,37 @@ const dashboardSection = document.getElementById('dashboard-section');
 const loginForm = document.getElementById('login-form');
 const logoutBtn = document.getElementById('logout-btn');
 const addOrderBtn = document.getElementById('add-order-btn');
+const openOrdersList = document.getElementById('open-orders-list');
+const finishedOrdersList = document.getElementById('finished-orders-list');
+const printArea = document.getElementById('print-area');
+
+// Modal de Nova Ordem
 const newOrderModal = document.getElementById('new-order-modal');
 const modalContent = document.getElementById('modal-content');
 const closeModalBtn = document.getElementById('close-modal-btn');
 const cancelModalBtn = document.getElementById('cancel-modal-btn');
 const newOrderForm = document.getElementById('new-order-form');
-const openOrdersList = document.getElementById('open-orders-list');
-const finishedOrdersList = document.getElementById('finished-orders-list');
-const printArea = document.getElementById('print-area');
 
-let unsubscribeFromOrders = null; // Variável para guardar a função de 'unsubscribe' do listener
+// Modal de Relatórios
+const reportBtn = document.getElementById('report-btn');
+const reportModal = document.getElementById('report-modal');
+const reportModalContent = document.getElementById('report-modal-content');
+const closeReportModalBtn = document.getElementById('close-report-modal-btn');
+const generateReportBtn = document.getElementById('generate-report-btn');
+const reportResultsArea = document.getElementById('report-results-area');
 
-// --- LÓGICA DE AUTENTICAÇÃO (Real com Firebase) ---
+
+let unsubscribeFromOrders = null; 
+
+// --- LÓGICA DE AUTENTICAÇÃO ---
 onAuthStateChanged(auth, (user) => {
     if (user) {
-        // Usuário está logado
         loginSection.classList.add('hidden');
         dashboardSection.classList.remove('hidden');
-        // Inicia o listener em tempo real para as ordens
         listenToOrders();
     } else {
-        // Usuário não está logado
         dashboardSection.classList.add('hidden');
         loginSection.classList.remove('hidden');
-        // Se houver um listener ativo, ele é desativado
         if (unsubscribeFromOrders) {
             unsubscribeFromOrders();
         }
@@ -86,7 +98,6 @@ loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = loginForm.email.value;
     const password = loginForm.password.value;
-
     try {
         await signInWithEmailAndPassword(auth, email, password);
     } catch (error) {
@@ -99,36 +110,41 @@ logoutBtn.addEventListener('click', () => {
     signOut(auth);
 });
 
-// --- LÓGICA DO MODAL (Permanece igual) ---
-function openModal() {
-    newOrderModal.classList.remove('hidden');
+// --- LÓGICA DOS MODAIS ---
+function openModal(modal, content) {
+    modal.classList.remove('hidden');
     setTimeout(() => {
-        modalContent.classList.remove('scale-95', 'opacity-0');
-        modalContent.classList.add('scale-100', 'opacity-100');
+        content.classList.remove('scale-95', 'opacity-0');
+        content.classList.add('scale-100', 'opacity-100');
     }, 10);
 }
 
-function closeModal() {
-    modalContent.classList.add('scale-95', 'opacity-0');
-    modalContent.classList.remove('scale-100', 'opacity-100');
+function closeModal(modal, content) {
+    content.classList.add('scale-95', 'opacity-0');
+    content.classList.remove('scale-100', 'opacity-100');
     setTimeout(() => {
-        newOrderModal.classList.add('hidden');
-        newOrderForm.reset();
+        modal.classList.add('hidden');
     }, 200);
 }
 
-addOrderBtn.addEventListener('click', openModal);
-closeModalBtn.addEventListener('click', closeModal);
-cancelModalBtn.addEventListener('click', closeModal);
+// Eventos do Modal de Nova Ordem
+addOrderBtn.addEventListener('click', () => openModal(newOrderModal, modalContent));
+closeModalBtn.addEventListener('click', () => closeModal(newOrderModal, modalContent));
+cancelModalBtn.addEventListener('click', () => closeModal(newOrderModal, modalContent));
 
-// --- LÓGICA DE ORDENS DE SERVIÇO (com Firestore) ---
+// Eventos do Modal de Relatórios
+reportBtn.addEventListener('click', () => openModal(reportModal, reportModalContent));
+closeReportModalBtn.addEventListener('click', () => {
+    closeModal(reportModal, reportModalContent)
+    reportResultsArea.classList.add('hidden'); // Esconde resultados ao fechar
+});
+
+
+// --- LÓGICA DE ORDENS DE SERVIÇO ---
 newOrderForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const user = auth.currentUser;
-    if (!user) {
-        alert("Você precisa estar logado para criar uma ordem.");
-        return;
-    }
+    if (!user) return alert("Você precisa estar logado para criar uma ordem.");
 
     const newOrderData = {
         nomeCliente: document.getElementById('client-name').value,
@@ -139,55 +155,39 @@ newOrderForm.addEventListener('submit', async (e) => {
         dataEntrada: Timestamp.fromDate(new Date()),
         dataFinalizacao: null,
         status: 'em_aberto',
-        ownerId: user.uid // Salva o ID do usuário que criou a ordem
+        ownerId: user.uid
     };
 
     try {
-        const ordersCollectionRef = collection(db, "orders");
-        await addDoc(ordersCollectionRef, newOrderData);
-        closeModal();
+        await addDoc(collection(db, "orders"), newOrderData);
+        closeModal(newOrderModal, modalContent);
+        newOrderForm.reset();
     } catch (error) {
         console.error("Erro ao salvar ordem: ", error);
         alert("Ocorreu um erro ao salvar a ordem.");
     }
 });
 
-// --- FUNÇÃO PARA OUVIR MUDANÇAS NAS ORDENS EM TEMPO REAL ---
+// --- LISTENER E RENDERIZAÇÃO DE ORDENS ---
 function listenToOrders() {
     const user = auth.currentUser;
     if (!user) return;
+    if (unsubscribeFromOrders) unsubscribeFromOrders();
 
-    // Se já existir um listener, desativa antes de criar um novo
-    if (unsubscribeFromOrders) {
-        unsubscribeFromOrders();
-    }
-
-    const q = query(
-        collection(db, "orders"), 
-        where("ownerId", "==", user.uid),
-        orderBy("dataEntrada", "desc")
-    );
-
-    // onSnapshot cria um listener que atualiza a tela sempre que os dados mudam no Firestore
+    const q = query(collection(db, "orders"), where("ownerId", "==", user.uid), orderBy("dataEntrada", "desc"));
     unsubscribeFromOrders = onSnapshot(q, (querySnapshot) => {
         renderOrders(querySnapshot.docs);
-    }, (error) => {
-        console.error("Erro ao ouvir as ordens:", error);
-    });
+    }, (error) => console.error("Erro ao ouvir as ordens:", error));
 }
 
-// --- FUNÇÃO PARA RENDERIZAR AS ORDENS NA TELA ---
 function renderOrders(docs) {
     openOrdersList.innerHTML = '';
     finishedOrdersList.innerHTML = '';
-    
-    let hasOpen = false;
-    let hasFinished = false;
+    let hasOpen = false, hasFinished = false;
 
     docs.forEach((doc) => {
         const order = { id: doc.id, ...doc.data() };
         const orderCard = createOrderCard(order);
-        
         if (order.status === 'em_aberto') {
             openOrdersList.appendChild(orderCard);
             hasOpen = true;
@@ -201,81 +201,121 @@ function renderOrders(docs) {
     if (!hasFinished) finishedOrdersList.innerHTML = '<p class="text-gray-400 p-4 bg-gray-900/50 rounded-lg shadow-sm">Nenhuma ordem de serviço finalizada.</p>';
 }
 
-// --- FUNÇÃO PARA CRIAR O CARD DE UMA ORDEM ---
 function createOrderCard(order) {
     const card = document.createElement('div');
     const statusClass = order.status === 'em_aberto' ? 'border-l-4 border-yellow-400' : 'border-l-4 border-lime-500';
     card.className = `bg-gray-900/70 p-4 rounded-lg shadow-lg transition-all duration-300 hover:shadow-lime-500/10 hover:border-lime-400 ${statusClass}`;
     
-    // O objeto de data do Firestore precisa ser convertido para um Date do JS
     const dateObject = order.dataEntrada.toDate();
     const formattedDate = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(dateObject);
     const formattedValue = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.valor);
 
-    let buttonsHtml = '';
+    let finishButtonHtml = '';
     if (order.status === 'em_aberto') {
-        buttonsHtml = `<button data-id="${order.id}" class="finish-btn flex items-center gap-1 bg-green-800/50 text-green-300 px-3 py-1 rounded-full hover:bg-green-700/50 text-sm font-semibold transition-colors"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4"><path fill-rule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.35 2.35 4.493-6.74a.75.75 0 0 1 1.04-.208Z" clip-rule="evenodd" /></svg>Finalizar</button>`;
+        finishButtonHtml = `<button data-id="${order.id}" class="finish-btn flex items-center gap-1 bg-green-800/50 text-green-300 px-3 py-1 rounded-full hover:bg-green-700/50 text-sm font-semibold transition-colors"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4"><path fill-rule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.35 2.35 4.493-6.74a.75.75 0 0 1 1.04-.208Z" clip-rule="evenodd" /></svg>Finalizar</button>`;
     }
 
     card.innerHTML = `
         <div class="flex justify-between items-start">
-            <div>
-                <p class="font-bold text-lg text-gray-200">${order.nomeCliente}</p>
-                <p class="text-sm text-gray-400">${order.modeloTenis}</p>
-            </div>
+            <div><p class="font-bold text-lg text-gray-200">${order.nomeCliente}</p><p class="text-sm text-gray-400">${order.modeloTenis}</p></div>
             <p class="font-bold text-lg text-lime-400">${formattedValue}</p>
         </div>
-        <div class="text-sm text-gray-500 mt-2">
-            <span>OS: ${order.id.substring(0, 6).toUpperCase()}</span> &bull;
-            <span>Entrada: ${formattedDate}</span>
-        </div>
+        <div class="text-sm text-gray-500 mt-2"><span>OS: ${order.id.substring(0, 6).toUpperCase()}</span> &bull; <span>Entrada: ${formattedDate}</span></div>
         ${order.observacoes ? `<p class="text-sm mt-3 pt-3 border-t border-gray-700 text-gray-400">${order.observacoes}</p>` : ''}
         <div class="flex justify-end items-center mt-4 space-x-2">
-            ${buttonsHtml}
+            ${finishButtonHtml}
             <button data-id="${order.id}" class="print-btn flex items-center gap-1 bg-gray-700 text-gray-300 px-3 py-1 rounded-full hover:bg-gray-600 text-sm font-semibold transition-colors"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4"><path d="M5 2.5a.5.5 0 0 0-.5.5v2a.5.5 0 0 0 .5.5h6a.5.5 0 0 0 .5-.5v-2a.5.5 0 0 0-.5-.5H5Z" /><path d="M2 5.5A1.5 1.5 0 0 0 .5 7v3.5A1.5 1.5 0 0 0 2 12h1.5a.5.5 0 0 0 0-1H2a.5.5 0 0 1-.5-.5V7a.5.5 0 0 1 .5-.5h12a.5.5 0 0 1 .5.5v3.5a.5.5 0 0 1-.5.5h-1.5a.5.5 0 0 0 0 1H14a1.5 1.5 0 0 0 1.5-1.5V7A1.5 1.5 0 0 0 14 5.5H2Z" /><path d="M5 10a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h6a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5H5Z" /></svg>Imprimir</button>
-        </div>
-    `;
+            <button data-id="${order.id}" class="delete-btn text-red-400 hover:text-red-300" title="Excluir Ordem"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-5 h-5"><path fill-rule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3V3.25a.75.75 0 0 0-.75-.75h-1.5Z" clip-rule="evenodd" /></svg></button>
+        </div>`;
     return card;
 }
 
-// --- DELEGAÇÃO DE EVENTOS (com Firebase) ---
+// --- DELEGAÇÃO DE EVENTOS GERAL ---
 document.body.addEventListener('click', async (e) => {
     const user = auth.currentUser;
     if (!user) return;
 
-    // Finalizar Ordem
     const finishBtn = e.target.closest('.finish-btn');
+    const printBtn = e.target.closest('.print-btn');
+    const deleteBtn = e.target.closest('.delete-btn');
+
     if (finishBtn) {
         const orderId = finishBtn.dataset.id;
-        const orderRef = doc(db, 'orders', orderId);
         try {
-            await updateDoc(orderRef, {
-                status: 'finalizado',
-                dataFinalizacao: Timestamp.fromDate(new Date())
-            });
-            // Não precisa chamar loadOrders(), o onSnapshot faz isso automaticamente!
-        } catch (error) { 
-            console.error("Erro ao finalizar ordem:", error); 
-            alert("Erro ao finalizar a ordem.");
-        }
+            await updateDoc(doc(db, 'orders', orderId), { status: 'finalizado', dataFinalizacao: Timestamp.fromDate(new Date()) });
+        } catch (error) { console.error("Erro ao finalizar ordem:", error); alert("Erro ao finalizar a ordem."); }
     }
 
-    // Imprimir Ordem
-    const printBtn = e.target.closest('.print-btn');
     if (printBtn) {
         const orderId = printBtn.dataset.id;
-        const orderRef = doc(db, 'orders', orderId);
         try {
-            const docSnap = await getDoc(orderRef);
-            if (docSnap.exists()) {
-                prepareAndPrintReceipt({ id: docSnap.id, ...docSnap.data() });
-            }
-        } catch (error) {
-            console.error("Erro ao buscar ordem para impressão:", error);
-            alert("Erro ao buscar dados para impressão.");
+            const docSnap = await getDoc(doc(db, 'orders', orderId));
+            if (docSnap.exists()) prepareAndPrintReceipt({ id: docSnap.id, ...docSnap.data() });
+        } catch (error) { console.error("Erro ao buscar ordem para impressão:", error); alert("Erro ao buscar dados para impressão."); }
+    }
+
+    if (deleteBtn) {
+        const orderId = deleteBtn.dataset.id;
+        if (confirm("Tem certeza que deseja excluir esta ordem de serviço? Esta ação não pode ser desfeita.")) {
+            try {
+                await deleteDoc(doc(db, 'orders', orderId));
+            } catch (error) { console.error("Erro ao excluir ordem:", error); alert("Erro ao excluir a ordem."); }
         }
     }
 });
+
+// --- LÓGICA DE RELATÓRIOS ---
+generateReportBtn.addEventListener('click', async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const startDate = document.getElementById('start-date').value;
+    const endDate = document.getElementById('end-date').value;
+
+    if (!startDate || !endDate) {
+        return alert("Por favor, selecione a data de início e de fim.");
+    }
+
+    // Adiciona a hora final do dia para incluir todos os registros do dia final.
+    const startTimestamp = Timestamp.fromDate(new Date(startDate + 'T00:00:00'));
+    const endTimestamp = Timestamp.fromDate(new Date(endDate + 'T23:59:59'));
+
+    const q = query(
+        collection(db, "orders"),
+        where("ownerId", "==", user.uid),
+        where("status", "==", "finalizado"),
+        where("dataFinalizacao", ">=", startTimestamp),
+        where("dataFinalizacao", "<=", endTimestamp)
+    );
+
+    try {
+        const querySnapshot = await getDocs(q);
+        let totalRevenue = 0;
+        const servicesCount = querySnapshot.size;
+
+        querySnapshot.forEach(doc => {
+            totalRevenue += doc.data().valor;
+        });
+        
+        displayReportResults(totalRevenue, servicesCount);
+
+    } catch (error) {
+        console.error("Erro ao gerar relatório:", error);
+        alert("Ocorreu um erro ao gerar o relatório. Verifique o console para mais detalhes. Pode ser necessário criar um índice no Firebase.");
+    }
+});
+
+function displayReportResults(totalRevenue, servicesCount) {
+    reportResultsArea.innerHTML = `
+        <h4 class="text-lg font-bold text-gray-200">Resultados do Período</h4>
+        <div class="mt-4 space-y-2 text-gray-300">
+            <p class="flex justify-between"><span>Serviços Finalizados:</span> <span class="font-semibold">${servicesCount}</span></p>
+            <p class="flex justify-between text-xl"><span>Faturamento Total:</span> <span class="font-bold text-lime-400">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalRevenue)}</span></p>
+        </div>
+    `;
+    reportResultsArea.classList.remove('hidden');
+}
+
 
 // --- LÓGICA DE IMPRESSÃO ---
 function prepareAndPrintReceipt(order) {
