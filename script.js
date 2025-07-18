@@ -66,6 +66,8 @@ const startDateInput = document.getElementById('start-date');
 const endDateInput = document.getElementById('end-date');
 const reportSummary = document.getElementById('report-summary');
 const reportDetailsList = document.getElementById('report-details-list');
+const generateReportBtn = document.getElementById('generate-report-btn');
+const clearReportBtn = document.getElementById('clear-report-btn');
 
 // Modal de Confirmação
 const confirmModal = document.getElementById('confirm-modal');
@@ -287,8 +289,8 @@ document.body.addEventListener('click', async (e) => {
 });
 
 // --- LÓGICA DE RELATÓRIOS ---
-startDateInput.addEventListener('change', updateReportView);
-endDateInput.addEventListener('change', updateReportView);
+generateReportBtn.addEventListener('click', updateReportView);
+clearReportBtn.addEventListener('click', setInitialDateRange);
 
 function updateReportView() {
     const startVal = startDateInput.value;
