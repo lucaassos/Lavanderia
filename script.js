@@ -11,9 +11,7 @@ import {
     getAuth, 
     onAuthStateChanged, 
     signInWithEmailAndPassword, 
-    signOut, 
-    signInWithCustomToken, 
-    signInAnonymously 
+    signOut
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { 
     getFirestore, 
@@ -21,7 +19,6 @@ import {
     addDoc, 
     query, 
     where, 
-    getDocs, 
     doc, 
     updateDoc, 
     getDoc, 
@@ -32,10 +29,18 @@ import {
 
 
 // --- INICIALIZAÇÃO E CONFIGURAÇÃO DO FIREBASE ---
-// O objeto 'firebaseConfig' e o 'initial_auth_token' são fornecidos pelo ambiente.
-// Não é necessário colar as chaves manualmente.
-const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+// !!! IMPORTANTE !!!
+// Cole aqui o objeto de configuração do seu projeto Firebase.
+// Você pode encontrar isso nas configurações do seu projeto no console do Firebase.
+const firebaseConfig = {
+  apiKey: "AIzaSyBgIySTsWkoylC2WEUgF_EGzt3JVy3UHw0",
+  authDomain: "lavanderia-clean-up.firebaseapp.com",
+  projectId: "lavanderia-clean-up",
+  storageBucket: "lavanderia-clean-up.firebasestorage.app",
+  messagingSenderId: "6383817947",
+  appId: "1:6383817947:web:9dca3543ad299afcd628fe",
+};
+
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -76,22 +81,6 @@ onAuthStateChanged(auth, (user) => {
         }
     }
 });
-
-// Autenticação inicial ao carregar a página
-(async () => {
-    try {
-        if (initialAuthToken) {
-            await signInWithCustomToken(auth, initialAuthToken);
-        } else {
-            // Se não houver token, tenta logar anonimamente como fallback.
-            // Em um app real, você poderia remover isso se só quisesse acesso com login.
-            await signInAnonymously(auth);
-        }
-    } catch (error) {
-        console.error("Erro na autenticação inicial:", error);
-    }
-})();
-
 
 loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
