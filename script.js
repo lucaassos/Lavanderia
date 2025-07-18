@@ -290,8 +290,13 @@ document.body.addEventListener('click', async (e) => {
 });
 
 // --- LÓGICA DE RELATÓRIOS ---
-generateReportBtn.addEventListener('click', updateReportView);
-downloadReportBtn.addEventListener('click', downloadReport);
+if (generateReportBtn) {
+    generateReportBtn.addEventListener('click', updateReportView);
+}
+if (downloadReportBtn) {
+    downloadReportBtn.addEventListener('click', downloadReport);
+}
+
 
 function updateReportView() {
     const startVal = startDateInput.value;
