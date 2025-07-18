@@ -43,6 +43,11 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// --- ID DA CONTA DA LOJA (COMPARTILHADO) ---
+// Todos os dados serão salvos e lidos usando este ID.
+const companyId = "oNor7X6GwkcgWtsvyL0Dg4tamwI3";
+
+
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- SELETORES DE ELEMENTOS ---
@@ -104,7 +109,6 @@ document.addEventListener('DOMContentLoaded', () => {
             loginSection.classList.add('hidden');
             dashboardSection.classList.remove('hidden');
             
-            // Desativa o botão de nova ordem até que os clientes sejam carregados
             if(addOrderBtn) {
                 addOrderBtn.disabled = true;
                 addOrderBtn.classList.add('opacity-50', 'cursor-not-allowed');
@@ -167,16 +171,13 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // --- LÓGICA DE CLIENTES ---
     function listenToCustomers() {
-        const user = auth.currentUser;
-        if (!user) return;
         if (unsubscribeFromCustomers) unsubscribeFromCustomers();
 
-        const q = query(collection(db, "customers"), where("ownerId", "==", user.uid), orderBy("name"));
+        const q = query(collection(db, "customers"), where("ownerId", "==", companyId), orderBy("name"));
         unsubscribeFromCustomers = onSnapshot(q, (snapshot) => {
             allCustomersCache = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             renderCustomersList();
 
-            // Ativa o botão de nova ordem assim que os clientes forem carregados
             if(addOrderBtn) {
                 addOrderBtn.disabled = false;
                 addOrderBtn.classList.remove('opacity-50', 'cursor-not-allowed');
@@ -204,7 +205,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Lógica da busca de clientes no modal de nova ordem
     customerSearchInput.addEventListener('input', () => {
         const searchTerm = customerSearchInput.value.toLowerCase();
         customerSearchResults.innerHTML = '';
@@ -241,13 +241,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if(newCustomerForm) newCustomerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const user = auth.currentUser;
-        if (!user) return;
-
         const newCustomerData = {
             name: document.getElementById('new-customer-name').value,
             phone: document.getElementById('new-customer-phone').value,
-            ownerId: user.uid
+            ownerId: companyId // Usa o ID da loja
         };
 
         try {
@@ -270,9 +267,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- LÓGICA DE ORDENS DE SERVIÇO ---
     if(newOrderForm) newOrderForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const user = auth.currentUser;
-        if (!user) return alert("Você precisa estar logado.");
-
         const customerId = selectedCustomerIdInput.value;
         if (!customerId) return alert("Por favor, selecione um cliente da lista.");
 
@@ -286,7 +280,7 @@ document.addEventListener('DOMContentLoaded', () => {
             dataEntrada: Timestamp.fromDate(new Date()),
             dataFinalizacao: null,
             status: 'em_aberto',
-            ownerId: user.uid
+            ownerId: companyId // Usa o ID da loja
         };
 
         try {
@@ -304,11 +298,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- LISTENER, BUSCA E RENDERIZAÇÃO DE ORDENS ---
     function listenToOrders() {
-        const user = auth.currentUser;
-        if (!user) return;
         if (unsubscribeFromOrders) unsubscribeFromOrders();
 
-        const q = query(collection(db, "orders"), where("ownerId", "==", user.uid), orderBy("dataEntrada", "desc"));
+        const q = query(collection(db, "orders"), where("ownerId", "==", companyId), orderBy("dataEntrada", "desc"));
         unsubscribeFromOrders = onSnapshot(q, (querySnapshot) => {
             allOrdersCache = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             renderFilteredOrders();
