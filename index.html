@@ -57,10 +57,6 @@
                     <h2 class="text-xl font-semibold text-gray-300 pt-1">Painel de Controle</h2>
                 </div>
                 <div class="flex items-center gap-4">
-                    <button id="report-btn" class="flex items-center gap-2 bg-gray-700 text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors duration-300 font-semibold shadow-md">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path fill-rule="evenodd" d="M15.99 5.412a.75.75 0 01.277 1.034l-3.5 5.25a.75.75 0 01-1.114.09l-2.08-2.426a.75.75 0 00-1.158.026l-3.5 4.5a.75.75 0 01-1.134-.944l3.5-4.5a.75.75 0 011.158-.026l2.08 2.426a.75.75 0 001.114-.09l3.5-5.25a.75.75 0 011.034-.277z" clip-rule="evenodd" /></svg>
-                        Relatórios
-                    </button>
                     <button id="add-order-btn" class="flex items-center gap-2 btn-gradient text-gray-900 px-4 py-2 rounded-lg hover:opacity-90 transition-opacity duration-300 font-semibold shadow-md">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" /></svg>
                         Nova Ordem
@@ -73,6 +69,13 @@
         </header>
 
         <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="mb-8">
+                <div class="relative">
+                    <input type="text" id="search-input" placeholder="Buscar por cliente ou tênis..." class="w-full px-4 py-3 text-lg text-gray-200 bg-gray-700/50 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500">
+                    <svg class="w-6 h-6 text-gray-400 absolute top-1/2 right-4 -translate-y-1/2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd" /></svg>
+                </div>
+            </div>
+
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <!-- Coluna de Ordens em Aberto -->
                 <div>
@@ -80,9 +83,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-yellow-400"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h7.5M8.25 12h7.5m-7.5 5.25h7.5M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>
                         Em Aberto
                     </h2>
-                    <div id="open-orders-list" class="space-y-4">
-                        <p class="text-gray-400 p-4 bg-gray-900/50 rounded-lg shadow-sm">Nenhuma ordem de serviço em aberto.</p>
-                    </div>
+                    <div id="open-orders-list" class="space-y-4"></div>
                 </div>
                 <!-- Coluna de Ordens Finalizadas -->
                 <div>
@@ -90,8 +91,31 @@
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-lime-500"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         Finalizadas
                     </h2>
-                    <div id="finished-orders-list" class="space-y-4">
-                         <p class="text-gray-400 p-4 bg-gray-900/50 rounded-lg shadow-sm">Nenhuma ordem de serviço finalizada.</p>
+                    <div id="finished-orders-list" class="space-y-4"></div>
+                </div>
+            </div>
+
+            <!-- Seção de Relatórios -->
+            <div id="report-section" class="mt-12 bg-gray-900/50 p-6 rounded-lg border border-gray-700">
+                <h2 class="text-2xl font-bold mb-6 text-gray-200">Relatório de Vendas</h2>
+                <div class="flex flex-wrap items-end gap-4 mb-6 pb-6 border-b border-gray-700">
+                    <div>
+                        <label for="start-date" class="block text-sm font-medium text-gray-400">Data de Início</label>
+                        <input type="date" id="start-date" class="w-full px-4 py-2 mt-1 text-gray-200 bg-gray-700 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-lime-500">
+                    </div>
+                    <div>
+                        <label for="end-date" class="block text-sm font-medium text-gray-400">Data de Fim</label>
+                        <input type="date" id="end-date" class="w-full px-4 py-2 mt-1 text-gray-200 bg-gray-700 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-lime-500">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Sumário -->
+                    <div id="report-summary" class="md:col-span-1 bg-gray-800 p-6 rounded-lg">
+                        <!-- Conteúdo do sumário gerado pelo JS -->
+                    </div>
+                    <!-- Detalhes -->
+                    <div id="report-details-list" class="md:col-span-2 space-y-3">
+                        <!-- Lista de vendas do período gerada pelo JS -->
                     </div>
                 </div>
             </div>
@@ -131,34 +155,6 @@
                     <button type="submit" class="btn-gradient text-gray-900 px-6 py-2 rounded-lg hover:opacity-90 font-semibold shadow-md transition-opacity">Salvar Ordem</button>
                 </div>
             </form>
-        </div>
-    </div>
-
-    <!-- Modal para Relatórios -->
-    <div id="report-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center z-50 p-4">
-        <div class="bg-gray-800 border border-lime-500/20 rounded-2xl shadow-2xl p-8 w-full max-w-lg transform transition-all scale-95 opacity-0" id="report-modal-content">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-2xl font-bold text-gray-200">Gerar Relatório Financeiro</h3>
-                <button id="close-report-modal-btn" class="text-gray-500 hover:text-gray-300 text-3xl">&times;</button>
-            </div>
-            <div class="space-y-4">
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label for="start-date" class="block text-sm font-medium text-gray-400">Data de Início</label>
-                        <input type="date" id="start-date" required class="w-full px-4 py-2 mt-1 text-gray-200 bg-gray-700 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-lime-500">
-                    </div>
-                    <div>
-                        <label for="end-date" class="block text-sm font-medium text-gray-400">Data de Fim</label>
-                        <input type="date" id="end-date" required class="w-full px-4 py-2 mt-1 text-gray-200 bg-gray-700 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-lime-500">
-                    </div>
-                </div>
-                <div class="flex justify-end pt-2">
-                    <button id="generate-report-btn" class="btn-gradient text-gray-900 px-6 py-2 rounded-lg hover:opacity-90 font-semibold shadow-md transition-opacity">Gerar</button>
-                </div>
-            </div>
-            <div id="report-results-area" class="mt-6 border-t border-gray-700 pt-6 hidden">
-                <!-- Resultados do relatório serão inseridos aqui -->
-            </div>
         </div>
     </div>
 
