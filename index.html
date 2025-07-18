@@ -69,6 +69,32 @@
         </header>
 
         <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            
+            <!-- Seção de Relatórios -->
+            <div id="report-section" class="mb-8 bg-gray-900/50 p-6 rounded-lg border border-gray-700">
+                <h2 class="text-2xl font-bold mb-6 text-gray-200">Relatório de Vendas</h2>
+                <div class="flex flex-wrap items-end gap-4 mb-6 pb-6 border-b border-gray-700">
+                    <div>
+                        <label for="start-date" class="block text-sm font-medium text-gray-400">Data de Início</label>
+                        <input type="date" id="start-date" class="w-full px-4 py-2 mt-1 text-gray-200 bg-gray-700 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-lime-500">
+                    </div>
+                    <div>
+                        <label for="end-date" class="block text-sm font-medium text-gray-400">Data de Fim</label>
+                        <input type="date" id="end-date" class="w-full px-4 py-2 mt-1 text-gray-200 bg-gray-700 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-lime-500">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Sumário -->
+                    <div id="report-summary" class="md:col-span-1 bg-gray-800 p-6 rounded-lg">
+                        <!-- Conteúdo do sumário gerado pelo JS -->
+                    </div>
+                    <!-- Detalhes -->
+                    <div id="report-details-list" class="md:col-span-2 space-y-3">
+                        <!-- Lista de vendas do período gerada pelo JS -->
+                    </div>
+                </div>
+            </div>
+
             <div class="mb-8">
                 <div class="relative">
                     <input type="text" id="search-input" placeholder="Buscar por cliente ou tênis..." class="w-full px-4 py-3 text-lg text-gray-200 bg-gray-700/50 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500">
@@ -92,31 +118,6 @@
                         Finalizadas
                     </h2>
                     <div id="finished-orders-list" class="space-y-4"></div>
-                </div>
-            </div>
-
-            <!-- Seção de Relatórios -->
-            <div id="report-section" class="mt-12 bg-gray-900/50 p-6 rounded-lg border border-gray-700">
-                <h2 class="text-2xl font-bold mb-6 text-gray-200">Relatório de Vendas</h2>
-                <div class="flex flex-wrap items-end gap-4 mb-6 pb-6 border-b border-gray-700">
-                    <div>
-                        <label for="start-date" class="block text-sm font-medium text-gray-400">Data de Início</label>
-                        <input type="date" id="start-date" class="w-full px-4 py-2 mt-1 text-gray-200 bg-gray-700 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-lime-500">
-                    </div>
-                    <div>
-                        <label for="end-date" class="block text-sm font-medium text-gray-400">Data de Fim</label>
-                        <input type="date" id="end-date" class="w-full px-4 py-2 mt-1 text-gray-200 bg-gray-700 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-lime-500">
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <!-- Sumário -->
-                    <div id="report-summary" class="md:col-span-1 bg-gray-800 p-6 rounded-lg">
-                        <!-- Conteúdo do sumário gerado pelo JS -->
-                    </div>
-                    <!-- Detalhes -->
-                    <div id="report-details-list" class="md:col-span-2 space-y-3">
-                        <!-- Lista de vendas do período gerada pelo JS -->
-                    </div>
                 </div>
             </div>
         </main>
