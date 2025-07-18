@@ -21,7 +21,7 @@ import {
     doc, 
     updateDoc, 
     getDoc, 
-    deleteDoc, // Importação para exclusão
+    deleteDoc, 
     Timestamp,
     onSnapshot,
     orderBy
@@ -29,23 +29,15 @@ import {
 
 
 // --- INICIALIZAÇÃO E CONFIGURAÇÃO DO FIREBASE ---
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-
-  apiKey: "AIzaSyBgIySTsWkoylC2WEUgF_EGzt3JVy3UHw0",
-
-  authDomain: "lavanderia-clean-up.firebaseapp.com",
-
-  projectId: "lavanderia-clean-up",
-
-  storageBucket: "lavanderia-clean-up.firebasestorage.app",
-
-  messagingSenderId: "6383817947",
-
-  appId: "1:6383817947:web:9dca3543ad299afcd628fe",
-
+  apiKey: "AIzaSyBgIySTsWkoylC2WEUgF_EGzt3JVy3UHw0",
+  authDomain: "lavanderia-clean-up.firebaseapp.com",
+  projectId: "lavanderia-clean-up",
+  storageBucket: "lavanderia-clean-up.firebasestorage.app",
+  messagingSenderId: "6383817947",
+  appId: "1:6383817947:web:9dca3543ad299afcd628fe",
 };
-
-
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -60,6 +52,7 @@ const addOrderBtn = document.getElementById('add-order-btn');
 const openOrdersList = document.getElementById('open-orders-list');
 const finishedOrdersList = document.getElementById('finished-orders-list');
 const printArea = document.getElementById('print-area');
+const searchInput = document.getElementById('search-input');
 
 // Modal de Nova Ordem
 const newOrderModal = document.getElementById('new-order-modal');
@@ -68,16 +61,22 @@ const closeModalBtn = document.getElementById('close-modal-btn');
 const cancelModalBtn = document.getElementById('cancel-modal-btn');
 const newOrderForm = document.getElementById('new-order-form');
 
-// Modal de Relatórios
-const reportBtn = document.getElementById('report-btn');
-const reportModal = document.getElementById('report-modal');
-const reportModalContent = document.getElementById('report-modal-content');
-const closeReportModalBtn = document.getElementById('close-report-modal-btn');
-const generateReportBtn = document.getElementById('generate-report-btn');
-const reportResultsArea = document.getElementById('report-results-area');
+// Seção de Relatórios
+const startDateInput = document.getElementById('start-date');
+const endDateInput = document.getElementById('end-date');
+const reportSummary = document.getElementById('report-summary');
+const reportDetailsList = document.getElementById('report-details-list');
 
+// Modal de Confirmação
+const confirmModal = document.getElementById('confirm-modal');
+const confirmModalContent = document.getElementById('confirm-modal-content');
+const confirmModalText = document.getElementById('confirm-modal-text');
+const confirmCancelBtn = document.getElementById('confirm-cancel-btn');
+const confirmOkBtn = document.getElementById('confirm-ok-btn');
 
 let unsubscribeFromOrders = null; 
+let confirmCallback = null;
+let allOrdersCache = []; // Cache para guardar todas as ordens
 
 // --- LÓGICA DE AUTENTICAÇÃO ---
 onAuthStateChanged(auth, (user) => {
@@ -112,6 +111,7 @@ logoutBtn.addEventListener('click', () => {
 
 // --- LÓGICA DOS MODAIS ---
 function openModal(modal, content) {
+    if (!modal || !content) return;
     modal.classList.remove('hidden');
     setTimeout(() => {
         content.classList.remove('scale-95', 'opacity-0');
@@ -120,6 +120,7 @@ function openModal(modal, content) {
 }
 
 function closeModal(modal, content) {
+    if (!modal || !content) return;
     content.classList.add('scale-95', 'opacity-0');
     content.classList.remove('scale-100', 'opacity-100');
     setTimeout(() => {
@@ -128,17 +129,25 @@ function closeModal(modal, content) {
 }
 
 // Eventos do Modal de Nova Ordem
-addOrderBtn.addEventListener('click', () => openModal(newOrderModal, modalContent));
-closeModalBtn.addEventListener('click', () => closeModal(newOrderModal, modalContent));
-cancelModalBtn.addEventListener('click', () => closeModal(newOrderModal, modalContent));
+if(addOrderBtn) addOrderBtn.addEventListener('click', () => openModal(newOrderModal, modalContent));
+if(closeModalBtn) closeModalBtn.addEventListener('click', () => closeModal(newOrderModal, modalContent));
+if(cancelModalBtn) cancelModalBtn.addEventListener('click', () => closeModal(newOrderModal, modalContent));
 
-// Eventos do Modal de Relatórios
-reportBtn.addEventListener('click', () => openModal(reportModal, reportModalContent));
-closeReportModalBtn.addEventListener('click', () => {
-    closeModal(reportModal, reportModalContent)
-    reportResultsArea.classList.add('hidden'); // Esconde resultados ao fechar
+// Eventos do Modal de Confirmação
+function showConfirm(message, callback) {
+    confirmModalText.textContent = message;
+    confirmCallback = callback;
+    openModal(confirmModal, confirmModalContent);
+}
+confirmCancelBtn.addEventListener('click', () => {
+    closeModal(confirmModal, confirmModalContent);
+    confirmCallback = null;
 });
-
+confirmOkBtn.addEventListener('click', () => {
+    if (confirmCallback) confirmCallback();
+    closeModal(confirmModal, confirmModalContent);
+    confirmCallback = null;
+});
 
 // --- LÓGICA DE ORDENS DE SERVIÇO ---
 newOrderForm.addEventListener('submit', async (e) => {
@@ -168,7 +177,7 @@ newOrderForm.addEventListener('submit', async (e) => {
     }
 });
 
-// --- LISTENER E RENDERIZAÇÃO DE ORDENS ---
+// --- LISTENER, BUSCA E RENDERIZAÇÃO DE ORDENS ---
 function listenToOrders() {
     const user = auth.currentUser;
     if (!user) return;
@@ -176,17 +185,30 @@ function listenToOrders() {
 
     const q = query(collection(db, "orders"), where("ownerId", "==", user.uid), orderBy("dataEntrada", "desc"));
     unsubscribeFromOrders = onSnapshot(q, (querySnapshot) => {
-        renderOrders(querySnapshot.docs);
+        allOrdersCache = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderFilteredOrders(); // Renderiza a lista com base no filtro atual
+        updateReportView(); // Atualiza o relatório com os dados novos
     }, (error) => console.error("Erro ao ouvir as ordens:", error));
 }
 
-function renderOrders(docs) {
+searchInput.addEventListener('input', renderFilteredOrders);
+
+function renderFilteredOrders() {
+    const searchTerm = searchInput.value.toLowerCase();
+    const filtered = allOrdersCache.filter(order => {
+        const clientName = order.nomeCliente.toLowerCase();
+        const sneakerModel = order.modeloTenis.toLowerCase();
+        return clientName.includes(searchTerm) || sneakerModel.includes(searchTerm);
+    });
+    renderOrderLists(filtered);
+}
+
+function renderOrderLists(orders) {
     openOrdersList.innerHTML = '';
     finishedOrdersList.innerHTML = '';
     let hasOpen = false, hasFinished = false;
 
-    docs.forEach((doc) => {
-        const order = { id: doc.id, ...doc.data() };
+    orders.forEach((order) => {
         const orderCard = createOrderCard(order);
         if (order.status === 'em_aberto') {
             openOrdersList.appendChild(orderCard);
@@ -256,65 +278,83 @@ document.body.addEventListener('click', async (e) => {
 
     if (deleteBtn) {
         const orderId = deleteBtn.dataset.id;
-        if (confirm("Tem certeza que deseja excluir esta ordem de serviço? Esta ação não pode ser desfeita.")) {
+        showConfirm("Tem certeza que deseja excluir esta ordem de serviço? Esta ação não pode ser desfeita.", async () => {
             try {
                 await deleteDoc(doc(db, 'orders', orderId));
             } catch (error) { console.error("Erro ao excluir ordem:", error); alert("Erro ao excluir a ordem."); }
-        }
+        });
     }
 });
 
 // --- LÓGICA DE RELATÓRIOS ---
-generateReportBtn.addEventListener('click', async () => {
-    const user = auth.currentUser;
-    if (!user) return;
+startDateInput.addEventListener('change', updateReportView);
+endDateInput.addEventListener('change', updateReportView);
 
-    const startDate = document.getElementById('start-date').value;
-    const endDate = document.getElementById('end-date').value;
+function updateReportView() {
+    const startVal = startDateInput.value;
+    const endVal = endDateInput.value;
+    
+    // Converte a data do input (YYYY-MM-DD) para objetos Date do JS
+    // Adiciona o T00:00:00 para evitar problemas com fuso horário
+    const startDate = startVal ? new Date(startVal + 'T00:00:00') : null;
+    const endDate = endVal ? new Date(endVal + 'T23:59:59') : null;
 
-    if (!startDate || !endDate) {
-        return alert("Por favor, selecione a data de início e de fim.");
-    }
-
-    // Adiciona a hora final do dia para incluir todos os registros do dia final.
-    const startTimestamp = Timestamp.fromDate(new Date(startDate + 'T00:00:00'));
-    const endTimestamp = Timestamp.fromDate(new Date(endDate + 'T23:59:59'));
-
-    const q = query(
-        collection(db, "orders"),
-        where("ownerId", "==", user.uid),
-        where("status", "==", "finalizado"),
-        where("dataFinalizacao", ">=", startTimestamp),
-        where("dataFinalizacao", "<=", endTimestamp)
-    );
-
-    try {
-        const querySnapshot = await getDocs(q);
-        let totalRevenue = 0;
-        const servicesCount = querySnapshot.size;
-
-        querySnapshot.forEach(doc => {
-            totalRevenue += doc.data().valor;
-        });
+    // Filtra as ordens do cache que são finalizadas e estão dentro do período
+    const filteredOrders = allOrdersCache.filter(order => {
+        if (order.status !== 'finalizado' || !order.dataFinalizacao) {
+            return false;
+        }
+        const finalizationDate = order.dataFinalizacao.toDate();
         
-        displayReportResults(totalRevenue, servicesCount);
+        const afterStart = startDate ? finalizationDate >= startDate : true;
+        const beforeEnd = endDate ? finalizationDate <= endDate : true;
+        
+        return afterStart && beforeEnd;
+    });
 
-    } catch (error) {
-        console.error("Erro ao gerar relatório:", error);
-        alert("Ocorreu um erro ao gerar o relatório. Verifique o console para mais detalhes. Pode ser necessário criar um índice no Firebase.");
-    }
-});
+    let totalRevenue = 0;
+    filteredOrders.forEach(order => {
+        totalRevenue += order.valor;
+    });
 
-function displayReportResults(totalRevenue, servicesCount) {
-    reportResultsArea.innerHTML = `
-        <h4 class="text-lg font-bold text-gray-200">Resultados do Período</h4>
-        <div class="mt-4 space-y-2 text-gray-300">
-            <p class="flex justify-between"><span>Serviços Finalizados:</span> <span class="font-semibold">${servicesCount}</span></p>
+    // Atualiza o sumário
+    reportSummary.innerHTML = `
+        <h3 class="text-lg font-bold text-gray-200 mb-4">Resumo do Período</h3>
+        <div class="space-y-3 text-gray-300">
+            <p class="flex justify-between"><span>Serviços Finalizados:</span> <span class="font-semibold">${filteredOrders.length}</span></p>
             <p class="flex justify-between text-xl"><span>Faturamento Total:</span> <span class="font-bold text-lime-400">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalRevenue)}</span></p>
         </div>
     `;
-    reportResultsArea.classList.remove('hidden');
+
+    // Atualiza a lista de detalhes
+    reportDetailsList.innerHTML = '';
+    if (filteredOrders.length > 0) {
+        filteredOrders.forEach(order => {
+            const detailItem = document.createElement('div');
+            detailItem.className = 'bg-gray-700/50 p-3 rounded-lg flex justify-between items-center';
+            const finalizationDate = new Intl.DateTimeFormat('pt-BR').format(order.dataFinalizacao.toDate());
+            detailItem.innerHTML = `
+                <div>
+                    <p class="font-semibold text-gray-200">${order.nomeCliente}</p>
+                    <p class="text-sm text-gray-400">${order.modeloTenis} - Finalizado em ${finalizationDate}</p>
+                </div>
+                <p class="font-bold text-lime-400">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.valor)}</p>
+            `;
+            reportDetailsList.appendChild(detailItem);
+        });
+    } else {
+        reportDetailsList.innerHTML = '<p class="text-gray-400">Nenhuma venda finalizada no período selecionado.</p>';
+    }
 }
+
+// Define as datas padrão para o dia atual ao carregar a página
+function setInitialDateRange() {
+    const today = new Date().toISOString().split('T')[0];
+    startDateInput.value = today;
+    endDateInput.value = today;
+    updateReportView(); // Chama para carregar o relatório do dia
+}
+setInitialDateRange();
 
 
 // --- LÓGICA DE IMPRESSÃO ---
