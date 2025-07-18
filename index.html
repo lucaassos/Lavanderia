@@ -132,9 +132,12 @@
                 <button id="close-modal-btn" class="text-gray-500 hover:text-gray-300 text-3xl">&times;</button>
             </div>
             <form id="new-order-form" class="space-y-4">
-                <div>
-                    <label for="customer-select" class="block text-sm font-medium text-gray-400">Cliente</label>
-                    <select id="customer-select" required class="w-full px-4 py-2 mt-1 text-gray-200 bg-gray-700 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-lime-500"></select>
+                <div class="flex items-end gap-2">
+                    <div class="flex-grow">
+                        <label for="customer-select" class="block text-sm font-medium text-gray-400">Cliente</label>
+                        <select id="customer-select" required class="w-full px-4 py-2 mt-1 text-gray-200 bg-gray-700 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-lime-500"></select>
+                    </div>
+                    <button type="button" id="add-new-customer-from-order-btn" title="Cadastrar Novo Cliente" class="flex-shrink-0 bg-gray-600 text-gray-200 h-11 w-11 flex items-center justify-center rounded-lg hover:bg-gray-500 font-semibold transition-colors text-xl">+</button>
                 </div>
                 <div>
                     <label for="client-phone" class="block text-sm font-medium text-gray-400">Telefone</label>
