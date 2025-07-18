@@ -69,9 +69,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const customerSearchResults = document.getElementById('customer-search-results');
     const selectedCustomerIdInput = document.getElementById('selected-customer-id');
     const clientPhoneInput = document.getElementById('client-phone');
-    const addNewCustomerFromOrderBtn = document.getElementById('add-new-customer-from-order-btn');
-    const serviceTypeSelect = document.getElementById('service-type');
-    const serviceValueInput = document.getElementById('service-value');
+    const serviceItemsContainer = document.getElementById('service-items-container');
+    const addServiceBtn = document.getElementById('add-service-btn');
+    const totalValueDisplay = document.getElementById('total-value-display');
 
     // Seção de Relatórios
     const startDateInput = document.getElementById('start-date');
@@ -80,9 +80,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const reportDetailsList = document.getElementById('report-details-list');
     const generateReportBtn = document.getElementById('generate-report-btn');
     const downloadReportBtn = document.getElementById('download-report-btn');
-
-    // Modal de Clientes
-    const customersBtn = document.getElementById('customers-btn');
     
     // Modal de Confirmação
     const confirmModal = document.getElementById('confirm-modal');
@@ -97,18 +94,17 @@ document.addEventListener('DOMContentLoaded', () => {
     let allOrdersCache = [];
     let allCustomersCache = [];
     let currentReportData = [];
+    let currentOrderItems = [];
 
     // --- LÓGICA DE AUTENTICAÇÃO ---
     onAuthStateChanged(auth, (user) => {
         if (user) {
             loginSection.classList.add('hidden');
             dashboardSection.classList.remove('hidden');
-            
             if(addOrderBtn) {
                 addOrderBtn.disabled = true;
                 addOrderBtn.classList.add('opacity-50', 'cursor-not-allowed');
             }
-
             listenToOrders();
             listenToCustomers();
         } else {
@@ -144,14 +140,12 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => modal.classList.add('hidden'), 200);
     }
 
-    if(addOrderBtn) addOrderBtn.addEventListener('click', () => openModal(newOrderModal, modalContent));
+    if(addOrderBtn) addOrderBtn.addEventListener('click', () => {
+        resetNewOrderForm();
+        openModal(newOrderModal, modalContent);
+    });
     if(closeModalBtn) closeModalBtn.addEventListener('click', () => closeModal(newOrderModal, modalContent));
     if(cancelModalBtn) cancelModalBtn.addEventListener('click', () => closeModal(newOrderModal, modalContent));
-        
-    if(addNewCustomerFromOrderBtn) addNewCustomerFromOrderBtn.addEventListener('click', () => {
-        // Redireciona para a página de clientes em vez de abrir um modal
-        window.location.href = 'clientes.html';
-    });
 
     function showConfirm(message, callback) {
         if(confirmModalText) confirmModalText.textContent = message;
@@ -167,17 +161,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- LÓGICA DE CLIENTES ---
     function listenToCustomers() {
         if (unsubscribeFromCustomers) unsubscribeFromCustomers();
-
         const q = query(collection(db, "customers"), where("ownerId", "==", companyId), orderBy("name"));
         unsubscribeFromCustomers = onSnapshot(q, (snapshot) => {
             allCustomersCache = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            
             if(addOrderBtn) {
                 addOrderBtn.disabled = false;
                 addOrderBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-            }
-            if(customerSearchInput){
-                customerSearchInput.disabled = false;
             }
         });
     }
@@ -189,9 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
             customerSearchResults.classList.add('hidden');
             return;
         }
-
         const filtered = allCustomersCache.filter(c => c.name.toLowerCase().includes(searchTerm));
-        
         if (filtered.length > 0) {
             filtered.forEach(customer => {
                 const item = document.createElement('div');
@@ -217,32 +204,129 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- LÓGICA DE ORDENS DE SERVIÇO ---
-    if(serviceTypeSelect) serviceTypeSelect.addEventListener('change', (e) => {
-        const selectedOption = e.target.options[e.target.selectedIndex];
-        const price = selectedOption.dataset.price;
+    function resetNewOrderForm() {
+        newOrderForm.reset();
+        customerSearchInput.value = '';
+        selectedCustomerIdInput.value = '';
+        clientPhoneInput.value = '';
+        currentOrderItems = [];
+        addServiceItem(); // Adiciona o primeiro item em branco
+    }
+    
+    function addServiceItem() {
+        currentOrderItems.push({ service: '', item: '', price: 0 });
+        renderServiceItems();
+    }
 
-        if (e.target.value === 'Outro') {
-            serviceValueInput.value = '';
-            serviceValueInput.readOnly = false;
-            serviceValueInput.focus();
-        } else {
-            serviceValueInput.value = price;
-            serviceValueInput.readOnly = true;
+    function removeServiceItem(index) {
+        currentOrderItems.splice(index, 1);
+        renderServiceItems();
+    }
+
+    function updateServiceItem(index, field, value) {
+        currentOrderItems[index][field] = value;
+        if (field === 'price') {
+            calculateTotal();
+        }
+    }
+    
+    function calculateTotal() {
+        const total = currentOrderItems.reduce((sum, item) => sum + parseFloat(item.price || 0), 0);
+        totalValueDisplay.textContent = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(total);
+    }
+
+    function renderServiceItems() {
+        serviceItemsContainer.innerHTML = '';
+        currentOrderItems.forEach((item, index) => {
+            const itemEl = document.createElement('div');
+            itemEl.className = 'grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-700/50 rounded-lg relative';
+            itemEl.innerHTML = `
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-400">Tipo de Serviço</label>
+                    <select data-index="${index}" class="service-type-select w-full px-4 py-2 mt-1 text-gray-200 bg-gray-700 border border-gray-600 rounded-lg">
+                        <option value="" data-price="0">Selecione um serviço</option>
+                        <option value="Higienização Completa" data-price="60">Higienização Completa</option>
+                        <option value="Higienização Premium" data-price="80">Higienização Premium</option>
+                        <option value="Higienização de Boné" data-price="40">Higienização de Boné</option>
+                        <option value="Higienização de Bolsa" data-price="70">Higienização de Bolsa</option>
+                        <option value="Reparo de Pintura ou Tecido" data-price="150">Reparo de Pintura ou Tecido</option>
+                        <option value="Pintura de Midsole" data-price="100">Pintura de Midsole</option>
+                        <option value="Impermeabilização" data-price="35">Impermeabilização</option>
+                        <option value="Outro" data-price="0">Outro Valor</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-400">Valor (R$)</label>
+                    <input type="number" data-index="${index}" class="service-value-input w-full px-4 py-2 mt-1 text-gray-200 bg-gray-700 border border-gray-600 rounded-lg" step="0.01" value="${item.price}" required>
+                </div>
+                <div class="md:col-span-3">
+                    <label class="block text-sm font-medium text-gray-400">Modelo do Tênis / Item</label>
+                    <input type="text" data-index="${index}" class="service-item-input w-full px-4 py-2 mt-1 text-gray-200 bg-gray-700 border border-gray-600 rounded-lg" value="${item.item}" required>
+                </div>
+                ${currentOrderItems.length > 1 ? `<button type="button" data-index="${index}" class="remove-service-btn absolute top-2 right-2 text-red-400 hover:text-red-300">&times;</button>` : ''}
+            `;
+            serviceItemsContainer.appendChild(itemEl);
+            // Pre-seleciona o serviço se já existir
+            itemEl.querySelector('.service-type-select').value = item.service;
+        });
+        calculateTotal();
+    }
+
+    if(addServiceBtn) addServiceBtn.addEventListener('click', addServiceItem);
+
+    serviceItemsContainer.addEventListener('change', (e) => {
+        const index = e.target.dataset.index;
+        if (e.target.classList.contains('service-type-select')) {
+            const selectedOption = e.target.options[e.target.selectedIndex];
+            const price = selectedOption.dataset.price;
+            const valueInput = serviceItemsContainer.querySelector(`.service-value-input[data-index="${index}"]`);
+            
+            updateServiceItem(index, 'service', e.target.value);
+            
+            if (e.target.value === 'Outro') {
+                valueInput.value = '';
+                valueInput.readOnly = false;
+                valueInput.focus();
+            } else {
+                valueInput.value = price;
+                valueInput.readOnly = true;
+                updateServiceItem(index, 'price', price);
+            }
+        }
+        if (e.target.classList.contains('service-value-input')) {
+            updateServiceItem(index, 'price', e.target.value);
         }
     });
-    
+
+    serviceItemsContainer.addEventListener('input', (e) => {
+        const index = e.target.dataset.index;
+        if (e.target.classList.contains('service-item-input')) {
+            updateServiceItem(index, 'item', e.target.value);
+        }
+    });
+
+    serviceItemsContainer.addEventListener('click', (e) => {
+        if (e.target.classList.contains('remove-service-btn')) {
+            removeServiceItem(e.target.dataset.index);
+        }
+    });
+
     if(newOrderForm) newOrderForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const customerId = selectedCustomerIdInput.value;
         if (!customerId) return alert("Por favor, selecione um cliente da lista.");
+        if (currentOrderItems.some(item => !item.service || !item.item)) {
+            return alert("Por favor, preencha todos os campos de serviço e item.");
+        }
+
+        const totalValue = currentOrderItems.reduce((sum, item) => sum + parseFloat(item.price || 0), 0);
 
         const newOrderData = {
             customerId: customerId,
             nomeCliente: customerSearchInput.value,
             telefoneCliente: clientPhoneInput.value,
-            tipoServico: serviceTypeSelect.value,
-            modeloTenis: document.getElementById('sneaker-model').value,
-            valor: parseFloat(serviceValueInput.value) || 0,
+            items: currentOrderItems,
+            valorTotal: totalValue,
             observacoes: document.getElementById('observations').value,
             dataEntrada: Timestamp.fromDate(new Date()),
             dataFinalizacao: null,
@@ -253,10 +337,6 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             await addDoc(collection(db, "orders"), newOrderData);
             closeModal(newOrderModal, modalContent);
-            newOrderForm.reset();
-            customerSearchInput.value = '';
-            selectedCustomerIdInput.value = '';
-            clientPhoneInput.value = '';
         } catch (error) {
             console.error("Erro ao salvar ordem: ", error);
             alert("Ocorreu um erro ao salvar a ordem.");
@@ -281,8 +361,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const searchTerm = searchInput.value.toLowerCase();
         const filtered = allOrdersCache.filter(order => {
             const clientName = order.nomeCliente.toLowerCase();
-            const sneakerModel = order.modeloTenis.toLowerCase();
-            return clientName.includes(searchTerm) || sneakerModel.includes(searchTerm);
+            const itemsMatch = order.items.some(item => item.item.toLowerCase().includes(searchTerm));
+            return clientName.includes(searchTerm) || itemsMatch;
         });
         renderOrderLists(filtered);
     }
@@ -315,7 +395,14 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const dateObject = order.dataEntrada.toDate();
         const formattedDate = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(dateObject);
-        const formattedValue = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.valor);
+        const formattedValue = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.valorTotal);
+
+        const itemsHtml = order.items.map(item => `
+            <div class="flex justify-between text-sm">
+                <p class="text-gray-300">${item.service} (<span class="text-gray-400">${item.item}</span>)</p>
+                <p class="text-gray-300">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.price)}</p>
+            </div>
+        `).join('');
 
         let finishButtonHtml = '';
         if (order.status === 'em_aberto') {
@@ -324,13 +411,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         card.innerHTML = `
             <div class="flex justify-between items-start">
-                <div>
-                    <p class="font-bold text-lg text-gray-200">${order.nomeCliente}</p>
-                    <p class="text-sm font-semibold text-lime-400">${order.tipoServico || ''}</p>
-                    <p class="text-sm text-gray-400">${order.modeloTenis}</p>
-                </div>
+                <div><p class="font-bold text-lg text-gray-200">${order.nomeCliente}</p></div>
                 <p class="font-bold text-lg text-lime-400">${formattedValue}</p>
             </div>
+            <div class="mt-2 space-y-1 border-t border-b border-gray-700 py-2">${itemsHtml}</div>
             <div class="text-sm text-gray-500 mt-2"><span>OS: ${order.id.substring(0, 6).toUpperCase()}</span> &bull; <span>Entrada: ${formattedDate}</span></div>
             ${order.observacoes ? `<p class="text-sm mt-3 pt-3 border-t border-gray-700 text-gray-400">${order.observacoes}</p>` : ''}
             <div class="flex justify-end items-center mt-4 space-x-2">
@@ -395,12 +479,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         let totalRevenue = 0;
-        currentReportData.forEach(order => totalRevenue += order.valor);
+        currentReportData.forEach(order => totalRevenue += order.valorTotal);
 
         reportSummary.innerHTML = `
             <h3 class="text-lg font-bold text-gray-200 mb-4">Resumo do Período</h3>
             <div class="space-y-3 text-gray-300">
-                <p class="flex justify-between"><span>Serviços Finalizados:</span> <span class="font-semibold">${currentReportData.length}</span></p>
+                <p class="flex justify-between"><span>Ordens Finalizadas:</span> <span class="font-semibold">${currentReportData.length}</span></p>
                 <p class="flex justify-between text-xl"><span>Faturamento Total:</span> <span class="font-bold text-lime-400">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalRevenue)}</span></p>
             </div>
         `;
@@ -414,9 +498,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 detailItem.innerHTML = `
                     <div>
                         <p class="font-semibold text-gray-200">${order.nomeCliente}</p>
-                        <p class="text-sm text-gray-400">${order.modeloTenis} - Finalizado em ${finalizationDate}</p>
+                        <p class="text-sm text-gray-400">${order.items.map(i => i.item).join(', ')} - Finalizado em ${finalizationDate}</p>
                     </div>
-                    <p class="font-bold text-lime-400">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.valor)}</p>
+                    <p class="font-bold text-lime-400">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.valorTotal)}</p>
                 `;
                 reportDetailsList.appendChild(detailItem);
             });
@@ -438,17 +522,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         let csvContent = "data:text/csv;charset=utf-8,";
-        csvContent += "Data Finalizacao,Cliente,Tipo Servico,Modelo Item,Valor,Observacoes\r\n";
+        csvContent += "Data Finalizacao,Cliente,Itens,Valor Total,Observacoes\r\n";
 
         currentReportData.forEach(order => {
             const finalizationDate = new Intl.DateTimeFormat('pt-BR').format(order.dataFinalizacao.toDate());
             const clientName = `"${order.nomeCliente.replace(/"/g, '""')}"`;
-            const serviceType = `"${order.tipoServico.replace(/"/g, '""')}"`;
-            const sneakerModel = `"${order.modeloTenis.replace(/"/g, '""')}"`;
-            const value = order.valor.toString().replace('.', ',');
+            const items = `"${order.items.map(i => `${i.service} (${i.item})`).join('; ')}"`;
+            const value = order.valorTotal.toString().replace('.', ',');
             const observations = `"${(order.observacoes || '').replace(/"/g, '""')}"`;
             
-            let row = [finalizationDate, clientName, serviceType, sneakerModel, value, observations].join(",");
+            let row = [finalizationDate, clientName, items, value, observations].join(",");
             csvContent += row + "\r\n";
         });
 
@@ -463,15 +546,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function prepareAndPrintReceipt(order) {
         const entradaFmt = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(order.dataEntrada.toDate());
-        const valorFmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.valor);
+        const valorFmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.valorTotal);
+
+        const itemsHtml = order.items.map(item => 
+            `<p><strong>Serviço:</strong> ${item.service}<br><strong>Item:</strong> ${item.item}<br><strong>Valor:</strong> ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.price)}</p>`
+        ).join('<hr style="border: 0; border-top: 1px dashed #ccc; margin: 5px 0;">');
 
         const receiptHTML = `
             <div style="font-family: 'Courier New', Courier, monospace; width: 280px; padding: 10px; font-size: 12px; color: #000; line-height: 1.4;">
                 <div style="text-align: center; margin-bottom: 10px;"><h2 style="font-family: 'Arial Black', Gadget, sans-serif; font-size: 16px; font-weight: bold; margin: 0;">Clean UP Shoes</h2><p style="margin: 0;">Comprovante de Serviço</p></div>
-                <hr style="border: 0; border-top: 1px dashed #000; margin: 10px 0;"><p><strong>OS:</strong> ${order.id.substring(0, 6).toUpperCase()}</p><p><strong>Cliente:</strong> ${order.nomeCliente}</p><p><strong>Telefone:</strong> ${order.telefoneCliente || 'Não informado'}</p><p><strong>Entrada:</strong> ${entradaFmt}</p>
-                <hr style="border: 0; border-top: 1px dashed #000; margin: 10px 0;"><p><strong>Serviço:</strong> ${order.tipoServico}</p><p><strong>Item:</strong> ${order.modeloTenis}</p><p><strong>Obs:</strong> ${order.observacoes || 'Nenhuma'}</p>
-                <hr style="border: 0; border-top: 1px dashed #000; margin: 10px 0;"><p style="font-size: 16px; text-align: right; font-weight: bold;">TOTAL: ${valorFmt}</p>
-                <hr style="border: 0; border-top: 1px dashed #000; margin: 10px 0;"><p style="text-align: center; font-size: 10px;">Obrigado pela preferência!</p>
+                <hr style="border: 0; border-top: 1px dashed #000; margin: 10px 0;">
+                <p><strong>OS:</strong> ${order.id.substring(0, 6).toUpperCase()}</p>
+                <p><strong>Cliente:</strong> ${order.nomeCliente}</p>
+                <p><strong>Telefone:</strong> ${order.telefoneCliente || 'Não informado'}</p>
+                <p><strong>Entrada:</strong> ${entradaFmt}</p>
+                <hr style="border: 0; border-top: 1px dashed #000; margin: 10px 0;">
+                ${itemsHtml}
+                ${order.observacoes ? `<hr style="border: 0; border-top: 1px dashed #000; margin: 10px 0;"><p><strong>Obs:</strong> ${order.observacoes}</p>` : ''}
+                <hr style="border: 0; border-top: 1px dashed #000; margin: 10px 0;">
+                <p style="font-size: 16px; text-align: right; font-weight: bold;">TOTAL: ${valorFmt}</p>
+                <hr style="border: 0; border-top: 1px dashed #000; margin: 10px 0;">
+                <p style="text-align: center; font-size: 10px;">Obrigado pela preferência!</p>
             </div>`;
         
         printArea.innerHTML = receiptHTML;
