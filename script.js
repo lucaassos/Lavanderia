@@ -38,12 +38,10 @@ const firebaseConfig = {
   messagingSenderId: "6383817947",
   appId: "1:6383817947:web:9dca3543ad299afcd628fe",
 };
-
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// Adicionamos um listener que espera o DOM (a página HTML) estar completamente carregado
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- SELETORES DE ELEMENTOS ---
@@ -63,7 +61,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeModalBtn = document.getElementById('close-modal-btn');
     const cancelModalBtn = document.getElementById('cancel-modal-btn');
     const newOrderForm = document.getElementById('new-order-form');
-    const customerSelect = document.getElementById('customer-select');
+    const customerSearchInput = document.getElementById('customer-search-input');
+    const customerSearchResults = document.getElementById('customer-search-results');
+    const selectedCustomerIdInput = document.getElementById('selected-customer-id');
     const clientPhoneInput = document.getElementById('client-phone');
     const addNewCustomerFromOrderBtn = document.getElementById('add-new-customer-from-order-btn');
 
@@ -167,7 +167,6 @@ document.addEventListener('DOMContentLoaded', () => {
         unsubscribeFromCustomers = onSnapshot(q, (snapshot) => {
             allCustomersCache = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             renderCustomersList();
-            populateCustomersDropdown();
         });
     }
 
@@ -191,23 +190,39 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function populateCustomersDropdown() {
-        if(!customerSelect) return;
-        const currentVal = customerSelect.value;
-        customerSelect.innerHTML = '<option value="">Selecione um cliente</option>';
-        allCustomersCache.forEach(customer => {
-            const option = document.createElement('option');
-            option.value = customer.id;
-            option.textContent = customer.name;
-            option.dataset.phone = customer.phone;
-            customerSelect.appendChild(option);
-        });
-        customerSelect.value = currentVal;
-    }
+    // Lógica da busca de clientes no modal de nova ordem
+    customerSearchInput.addEventListener('input', () => {
+        const searchTerm = customerSearchInput.value.toLowerCase();
+        customerSearchResults.innerHTML = '';
+        if (searchTerm.length === 0) {
+            customerSearchResults.classList.add('hidden');
+            return;
+        }
 
-    if(customerSelect) customerSelect.addEventListener('change', (e) => {
-        const selectedOption = e.target.options[e.target.selectedIndex];
-        if(clientPhoneInput) clientPhoneInput.value = selectedOption.dataset.phone || '';
+        const filtered = allCustomersCache.filter(c => c.name.toLowerCase().includes(searchTerm));
+        
+        if (filtered.length > 0) {
+            filtered.forEach(customer => {
+                const item = document.createElement('div');
+                item.className = 'p-2 hover:bg-gray-700 cursor-pointer';
+                item.textContent = customer.name;
+                item.dataset.id = customer.id;
+                item.dataset.phone = customer.phone;
+                customerSearchResults.appendChild(item);
+            });
+            customerSearchResults.classList.remove('hidden');
+        } else {
+            customerSearchResults.classList.add('hidden');
+        }
+    });
+
+    customerSearchResults.addEventListener('click', (e) => {
+        if (e.target.tagName === 'DIV') {
+            customerSearchInput.value = e.target.textContent;
+            selectedCustomerIdInput.value = e.target.dataset.id;
+            clientPhoneInput.value = e.target.dataset.phone;
+            customerSearchResults.classList.add('hidden');
+        }
     });
 
     if(newCustomerForm) newCustomerForm.addEventListener('submit', async (e) => {
@@ -227,10 +242,9 @@ document.addEventListener('DOMContentLoaded', () => {
             closeModal(customersModal, customersModalContent);
             
             setTimeout(() => {
-                if(customerSelect) {
-                    customerSelect.value = docRef.id;
-                    customerSelect.dispatchEvent(new Event('change'));
-                }
+                customerSearchInput.value = newCustomerData.name;
+                selectedCustomerIdInput.value = docRef.id;
+                clientPhoneInput.value = newCustomerData.phone;
             }, 500);
 
         } catch (error) {
@@ -245,12 +259,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const user = auth.currentUser;
         if (!user) return alert("Você precisa estar logado.");
 
-        const selectedOption = customerSelect.options[customerSelect.selectedIndex];
-        if (!selectedOption || !selectedOption.value) return alert("Por favor, selecione um cliente.");
+        const customerId = selectedCustomerIdInput.value;
+        if (!customerId) return alert("Por favor, selecione um cliente da lista.");
 
         const newOrderData = {
-            customerId: selectedOption.value,
-            nomeCliente: selectedOption.textContent,
+            customerId: customerId,
+            nomeCliente: customerSearchInput.value,
             telefoneCliente: clientPhoneInput.value,
             modeloTenis: document.getElementById('sneaker-model').value,
             valor: parseFloat(document.getElementById('service-value').value) || 0,
@@ -265,6 +279,9 @@ document.addEventListener('DOMContentLoaded', () => {
             await addDoc(collection(db, "orders"), newOrderData);
             closeModal(newOrderModal, modalContent);
             newOrderForm.reset();
+            customerSearchInput.value = '';
+            selectedCustomerIdInput.value = '';
+            clientPhoneInput.value = '';
         } catch (error) {
             console.error("Erro ao salvar ordem: ", error);
             alert("Ocorreu um erro ao salvar a ordem.");
