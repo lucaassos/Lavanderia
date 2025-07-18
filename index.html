@@ -148,7 +148,21 @@
                     <input type="tel" id="client-phone" readonly class="w-full px-4 py-2 mt-1 text-gray-400 bg-gray-900/50 border border-gray-600 rounded-lg shadow-sm">
                 </div>
                 <div>
-                    <label for="sneaker-model" class="block text-sm font-medium text-gray-400">Modelo do Tênis</label>
+                    <label for="service-type" class="block text-sm font-medium text-gray-400">Tipo de Serviço</label>
+                    <select id="service-type" required class="w-full px-4 py-2 mt-1 text-gray-200 bg-gray-700 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-lime-500">
+                        <option value="" data-price="0">Selecione um serviço</option>
+                        <option value="Higienização Completa" data-price="60">Higienização Completa</option>
+                        <option value="Higienização Premium" data-price="80">Higienização Premium</option>
+                        <option value="Higienização de Boné" data-price="40">Higienização de Boné</option>
+                        <option value="Higienização de Bolsa" data-price="70">Higienização de Bolsa</option>
+                        <option value="Reparo de Pintura ou Tecido" data-price="150">Reparo de Pintura ou Tecido</option>
+                        <option value="Pintura de Midsole" data-price="100">Pintura de Midsole</option>
+                        <option value="Impermeabilização" data-price="35">Impermeabilização</option>
+                        <option value="Outro" data-price="0">Outro Valor</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="sneaker-model" class="block text-sm font-medium text-gray-400">Modelo do Tênis / Item</label>
                     <input type="text" id="sneaker-model" required class="w-full px-4 py-2 mt-1 text-gray-200 bg-gray-700 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-lime-500">
                 </div>
                  <div>
