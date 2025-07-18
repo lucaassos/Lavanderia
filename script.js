@@ -38,6 +38,7 @@ const firebaseConfig = {
   messagingSenderId: "6383817947",
   appId: "1:6383817947:web:9dca3543ad299afcd628fe",
 };
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -102,6 +103,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (user) {
             loginSection.classList.add('hidden');
             dashboardSection.classList.remove('hidden');
+            
+            // Desativa o botão de nova ordem até que os clientes sejam carregados
+            if(addOrderBtn) {
+                addOrderBtn.disabled = true;
+                addOrderBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+
             listenToOrders();
             listenToCustomers();
         } else {
@@ -167,6 +175,12 @@ document.addEventListener('DOMContentLoaded', () => {
         unsubscribeFromCustomers = onSnapshot(q, (snapshot) => {
             allCustomersCache = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             renderCustomersList();
+
+            // Ativa o botão de nova ordem assim que os clientes forem carregados
+            if(addOrderBtn) {
+                addOrderBtn.disabled = false;
+                addOrderBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
         });
     }
 
