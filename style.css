@@ -1,0 +1,36 @@
+/*
+  Arquivo de Estilos Customizados para o sistema Clean UP Shoes
+*/
+
+body {
+    font-family: 'Poppins', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.font-logo {
+    font-family: 'Permanent Marker', cursive;
+}
+
+/* Estilo para o gradiente dos botões principais */
+.btn-gradient {
+    background-image: linear-gradient(to right, #84cc16, #a3e635);
+}
+
+/* Regras de Impressão:
+  Esconde tudo na página, exceto a área de impressão designada.
+*/
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    #print-area, #print-area * {
+        visibility: visible;
+    }
+    #print-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+    }
+}
