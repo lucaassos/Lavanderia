@@ -43,6 +43,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// Adicionamos um listener que espera o DOM (a página HTML) estar completamente carregado
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- SELETORES DE ELEMENTOS ---
@@ -143,16 +144,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if(customersBtn) customersBtn.addEventListener('click', () => openModal(customersModal, customersModalContent));
     if(closeCustomersModalBtn) closeCustomersModalBtn.addEventListener('click', () => closeModal(customersModal, customersModalContent));
     
-    // Botão "+" para adicionar cliente de dentro da tela de nova ordem
     if(addNewCustomerFromOrderBtn) addNewCustomerFromOrderBtn.addEventListener('click', () => openModal(customersModal, customersModalContent));
 
     function showConfirm(message, callback) {
-        confirmModalText.textContent = message;
+        if(confirmModalText) confirmModalText.textContent = message;
         confirmCallback = callback;
         openModal(confirmModal, confirmModalContent);
     }
-    confirmCancelBtn.addEventListener('click', () => closeModal(confirmModal, confirmModalContent));
-    confirmOkBtn.addEventListener('click', () => {
+    if(confirmCancelBtn) confirmCancelBtn.addEventListener('click', () => closeModal(confirmModal, confirmModalContent));
+    if(confirmOkBtn) confirmOkBtn.addEventListener('click', () => {
         if (confirmCallback) confirmCallback();
         closeModal(confirmModal, confirmModalContent);
     });
@@ -172,6 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderCustomersList() {
+        if(!customersList) return;
         customersList.innerHTML = '';
         if (allCustomersCache.length === 0) {
             customersList.innerHTML = '<p class="text-gray-400">Nenhum cliente cadastrado.</p>';
@@ -191,6 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function populateCustomersDropdown() {
+        if(!customerSelect) return;
         const currentVal = customerSelect.value;
         customerSelect.innerHTML = '<option value="">Selecione um cliente</option>';
         allCustomersCache.forEach(customer => {
@@ -203,12 +205,12 @@ document.addEventListener('DOMContentLoaded', () => {
         customerSelect.value = currentVal;
     }
 
-    customerSelect.addEventListener('change', (e) => {
+    if(customerSelect) customerSelect.addEventListener('change', (e) => {
         const selectedOption = e.target.options[e.target.selectedIndex];
-        clientPhoneInput.value = selectedOption.dataset.phone || '';
+        if(clientPhoneInput) clientPhoneInput.value = selectedOption.dataset.phone || '';
     });
 
-    newCustomerForm.addEventListener('submit', async (e) => {
+    if(newCustomerForm) newCustomerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const user = auth.currentUser;
         if (!user) return;
@@ -222,13 +224,13 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const docRef = await addDoc(collection(db, "customers"), newCustomerData);
             newCustomerForm.reset();
-            closeModal(customersModal, customersModalContent); // Fecha o modal de clientes
+            closeModal(customersModal, customersModalContent);
             
-            // Aguarda um instante para o onSnapshot atualizar a lista e então seleciona o novo cliente
             setTimeout(() => {
-                customerSelect.value = docRef.id;
-                // Dispara o evento 'change' para atualizar o campo de telefone
-                customerSelect.dispatchEvent(new Event('change'));
+                if(customerSelect) {
+                    customerSelect.value = docRef.id;
+                    customerSelect.dispatchEvent(new Event('change'));
+                }
             }, 500);
 
         } catch (error) {
@@ -238,13 +240,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- LÓGICA DE ORDENS DE SERVIÇO ---
-    newOrderForm.addEventListener('submit', async (e) => {
+    if(newOrderForm) newOrderForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const user = auth.currentUser;
         if (!user) return alert("Você precisa estar logado.");
 
         const selectedOption = customerSelect.options[customerSelect.selectedIndex];
-        if (!selectedOption.value) return alert("Por favor, selecione um cliente.");
+        if (!selectedOption || !selectedOption.value) return alert("Por favor, selecione um cliente.");
 
         const newOrderData = {
             customerId: selectedOption.value,
@@ -283,7 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, (error) => console.error("Erro ao ouvir as ordens:", error));
     }
 
-    searchInput.addEventListener('input', renderFilteredOrders);
+    if(searchInput) searchInput.addEventListener('input', renderFilteredOrders);
 
     function renderFilteredOrders() {
         const searchTerm = searchInput.value.toLowerCase();
@@ -296,6 +298,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderOrderLists(orders) {
+        if(!openOrdersList || !finishedOrdersList) return;
         openOrdersList.innerHTML = '';
         finishedOrdersList.innerHTML = '';
         let hasOpen = false, hasFinished = false;
@@ -379,8 +382,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- LÓGICA DE RELATÓRIOS ---
-    generateReportBtn.addEventListener('click', updateReportView);
-    downloadReportBtn.addEventListener('click', downloadReport);
+    if(generateReportBtn) generateReportBtn.addEventListener('click', updateReportView);
+    if(downloadReportBtn) downloadReportBtn.addEventListener('click', downloadReport);
 
     function updateReportView() {
         const startVal = startDateInput.value;
