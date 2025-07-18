@@ -83,12 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Modal de Clientes
     const customersBtn = document.getElementById('customers-btn');
-    const customersModal = document.getElementById('customers-modal');
-    const customersModalContent = document.getElementById('customers-modal-content');
-    const closeCustomersModalBtn = document.getElementById('close-customers-modal-btn');
-    const newCustomerForm = document.getElementById('new-customer-form');
-    const customersList = document.getElementById('customers-list');
-
+    
     // Modal de Confirmação
     const confirmModal = document.getElementById('confirm-modal');
     const confirmModalContent = document.getElementById('confirm-modal-content');
@@ -124,7 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    loginForm.addEventListener('submit', async (e) => {
+    if(loginForm) loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         try {
             await signInWithEmailAndPassword(auth, loginForm.email.value, loginForm.password.value);
@@ -134,7 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    logoutBtn.addEventListener('click', () => signOut(auth));
+    if(logoutBtn) logoutBtn.addEventListener('click', () => signOut(auth));
 
     // --- LÓGICA DOS MODAIS ---
     function openModal(modal, content) {
@@ -152,11 +147,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if(addOrderBtn) addOrderBtn.addEventListener('click', () => openModal(newOrderModal, modalContent));
     if(closeModalBtn) closeModalBtn.addEventListener('click', () => closeModal(newOrderModal, modalContent));
     if(cancelModalBtn) cancelModalBtn.addEventListener('click', () => closeModal(newOrderModal, modalContent));
-    
-    if(customersBtn) customersBtn.addEventListener('click', () => openModal(customersModal, customersModalContent));
-    if(closeCustomersModalBtn) closeCustomersModalBtn.addEventListener('click', () => closeModal(customersModal, customersModalContent));
-    
-    if(addNewCustomerFromOrderBtn) addNewCustomerFromOrderBtn.addEventListener('click', () => openModal(customersModal, customersModalContent));
+        
+    if(addNewCustomerFromOrderBtn) addNewCustomerFromOrderBtn.addEventListener('click', () => {
+        // Redireciona para a página de clientes em vez de abrir um modal
+        window.location.href = 'clientes.html';
+    });
 
     function showConfirm(message, callback) {
         if(confirmModalText) confirmModalText.textContent = message;
@@ -171,15 +166,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // --- LÓGICA DE CLIENTES ---
     function listenToCustomers() {
-        const user = auth.currentUser;
-        if (!user) return;
         if (unsubscribeFromCustomers) unsubscribeFromCustomers();
 
         const q = query(collection(db, "customers"), where("ownerId", "==", companyId), orderBy("name"));
         unsubscribeFromCustomers = onSnapshot(q, (snapshot) => {
             allCustomersCache = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            renderCustomersList();
-
+            
             if(addOrderBtn) {
                 addOrderBtn.disabled = false;
                 addOrderBtn.classList.remove('opacity-50', 'cursor-not-allowed');
@@ -187,27 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function renderCustomersList() {
-        if(!customersList) return;
-        customersList.innerHTML = '';
-        if (allCustomersCache.length === 0) {
-            customersList.innerHTML = '<p class="text-gray-400">Nenhum cliente cadastrado.</p>';
-            return;
-        }
-        allCustomersCache.forEach(customer => {
-            const item = document.createElement('div');
-            item.className = 'bg-gray-700/50 p-3 rounded-lg flex justify-between items-center';
-            item.innerHTML = `
-                <div>
-                    <p class="font-semibold text-gray-200">${customer.name}</p>
-                    <p class="text-sm text-gray-400">${customer.phone}</p>
-                </div>
-            `;
-            customersList.appendChild(item);
-        });
-    }
-
-    customerSearchInput.addEventListener('input', () => {
+    if(customerSearchInput) customerSearchInput.addEventListener('input', () => {
         const searchTerm = customerSearchInput.value.toLowerCase();
         customerSearchResults.innerHTML = '';
         if (searchTerm.length === 0) {
@@ -232,37 +204,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    customerSearchResults.addEventListener('click', (e) => {
+    if(customerSearchResults) customerSearchResults.addEventListener('click', (e) => {
         if (e.target.tagName === 'DIV') {
             customerSearchInput.value = e.target.textContent;
             selectedCustomerIdInput.value = e.target.dataset.id;
             clientPhoneInput.value = e.target.dataset.phone;
             customerSearchResults.classList.add('hidden');
-        }
-    });
-
-    if(newCustomerForm) newCustomerForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const newCustomerData = {
-            name: document.getElementById('new-customer-name').value,
-            phone: document.getElementById('new-customer-phone').value,
-            ownerId: companyId
-        };
-
-        try {
-            const docRef = await addDoc(collection(db, "customers"), newCustomerData);
-            newCustomerForm.reset();
-            closeModal(customersModal, customersModalContent);
-            
-            setTimeout(() => {
-                customerSearchInput.value = newCustomerData.name;
-                selectedCustomerIdInput.value = docRef.id;
-                clientPhoneInput.value = newCustomerData.phone;
-            }, 500);
-
-        } catch (error) {
-            console.error("Erro ao salvar cliente:", error);
-            alert("Erro ao salvar cliente.");
         }
     });
 
