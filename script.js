@@ -44,9 +44,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 // --- ID DA CONTA DA LOJA (COMPARTILHADO) ---
-// Todos os dados serão salvos e lidos usando este ID.
 const companyId = "oNor7X6GwkcgWtsvyL0Dg4tamwI3";
-
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -72,6 +70,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const selectedCustomerIdInput = document.getElementById('selected-customer-id');
     const clientPhoneInput = document.getElementById('client-phone');
     const addNewCustomerFromOrderBtn = document.getElementById('add-new-customer-from-order-btn');
+    const serviceTypeSelect = document.getElementById('service-type');
+    const serviceValueInput = document.getElementById('service-value');
 
     // Seção de Relatórios
     const startDateInput = document.getElementById('start-date');
@@ -171,6 +171,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // --- LÓGICA DE CLIENTES ---
     function listenToCustomers() {
+        const user = auth.currentUser;
+        if (!user) return;
         if (unsubscribeFromCustomers) unsubscribeFromCustomers();
 
         const q = query(collection(db, "customers"), where("ownerId", "==", companyId), orderBy("name"));
@@ -244,7 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const newCustomerData = {
             name: document.getElementById('new-customer-name').value,
             phone: document.getElementById('new-customer-phone').value,
-            ownerId: companyId // Usa o ID da loja
+            ownerId: companyId
         };
 
         try {
@@ -265,6 +267,20 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- LÓGICA DE ORDENS DE SERVIÇO ---
+    if(serviceTypeSelect) serviceTypeSelect.addEventListener('change', (e) => {
+        const selectedOption = e.target.options[e.target.selectedIndex];
+        const price = selectedOption.dataset.price;
+
+        if (e.target.value === 'Outro') {
+            serviceValueInput.value = '';
+            serviceValueInput.readOnly = false;
+            serviceValueInput.focus();
+        } else {
+            serviceValueInput.value = price;
+            serviceValueInput.readOnly = true;
+        }
+    });
+    
     if(newOrderForm) newOrderForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const customerId = selectedCustomerIdInput.value;
@@ -274,13 +290,14 @@ document.addEventListener('DOMContentLoaded', () => {
             customerId: customerId,
             nomeCliente: customerSearchInput.value,
             telefoneCliente: clientPhoneInput.value,
+            tipoServico: serviceTypeSelect.value,
             modeloTenis: document.getElementById('sneaker-model').value,
-            valor: parseFloat(document.getElementById('service-value').value) || 0,
+            valor: parseFloat(serviceValueInput.value) || 0,
             observacoes: document.getElementById('observations').value,
             dataEntrada: Timestamp.fromDate(new Date()),
             dataFinalizacao: null,
             status: 'em_aberto',
-            ownerId: companyId // Usa o ID da loja
+            ownerId: companyId
         };
 
         try {
@@ -357,7 +374,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         card.innerHTML = `
             <div class="flex justify-between items-start">
-                <div><p class="font-bold text-lg text-gray-200">${order.nomeCliente}</p><p class="text-sm text-gray-400">${order.modeloTenis}</p></div>
+                <div>
+                    <p class="font-bold text-lg text-gray-200">${order.nomeCliente}</p>
+                    <p class="text-sm font-semibold text-lime-400">${order.tipoServico || ''}</p>
+                    <p class="text-sm text-gray-400">${order.modeloTenis}</p>
+                </div>
                 <p class="font-bold text-lg text-lime-400">${formattedValue}</p>
             </div>
             <div class="text-sm text-gray-500 mt-2"><span>OS: ${order.id.substring(0, 6).toUpperCase()}</span> &bull; <span>Entrada: ${formattedDate}</span></div>
@@ -467,16 +488,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         let csvContent = "data:text/csv;charset=utf-8,";
-        csvContent += "Data Finalizacao,Cliente,Modelo Tenis,Valor,Observacoes\r\n";
+        csvContent += "Data Finalizacao,Cliente,Tipo Servico,Modelo Item,Valor,Observacoes\r\n";
 
         currentReportData.forEach(order => {
             const finalizationDate = new Intl.DateTimeFormat('pt-BR').format(order.dataFinalizacao.toDate());
             const clientName = `"${order.nomeCliente.replace(/"/g, '""')}"`;
+            const serviceType = `"${order.tipoServico.replace(/"/g, '""')}"`;
             const sneakerModel = `"${order.modeloTenis.replace(/"/g, '""')}"`;
             const value = order.valor.toString().replace('.', ',');
             const observations = `"${(order.observacoes || '').replace(/"/g, '""')}"`;
             
-            let row = [finalizationDate, clientName, sneakerModel, value, observations].join(",");
+            let row = [finalizationDate, clientName, serviceType, sneakerModel, value, observations].join(",");
             csvContent += row + "\r\n";
         });
 
@@ -497,7 +519,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div style="font-family: 'Courier New', Courier, monospace; width: 280px; padding: 10px; font-size: 12px; color: #000; line-height: 1.4;">
                 <div style="text-align: center; margin-bottom: 10px;"><h2 style="font-family: 'Arial Black', Gadget, sans-serif; font-size: 16px; font-weight: bold; margin: 0;">Clean UP Shoes</h2><p style="margin: 0;">Comprovante de Serviço</p></div>
                 <hr style="border: 0; border-top: 1px dashed #000; margin: 10px 0;"><p><strong>OS:</strong> ${order.id.substring(0, 6).toUpperCase()}</p><p><strong>Cliente:</strong> ${order.nomeCliente}</p><p><strong>Telefone:</strong> ${order.telefoneCliente || 'Não informado'}</p><p><strong>Entrada:</strong> ${entradaFmt}</p>
-                <hr style="border: 0; border-top: 1px dashed #000; margin: 10px 0;"><p><strong>Item:</strong> ${order.modeloTenis}</p><p><strong>Obs:</strong> ${order.observacoes || 'Nenhuma'}</p>
+                <hr style="border: 0; border-top: 1px dashed #000; margin: 10px 0;"><p><strong>Serviço:</strong> ${order.tipoServico}</p><p><strong>Item:</strong> ${order.modeloTenis}</p><p><strong>Obs:</strong> ${order.observacoes || 'Nenhuma'}</p>
                 <hr style="border: 0; border-top: 1px dashed #000; margin: 10px 0;"><p style="font-size: 16px; text-align: right; font-weight: bold;">TOTAL: ${valorFmt}</p>
                 <hr style="border: 0; border-top: 1px dashed #000; margin: 10px 0;"><p style="text-align: center; font-size: 10px;">Obrigado pela preferência!</p>
             </div>`;
