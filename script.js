@@ -43,7 +43,6 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// Adicionamos um listener que espera o DOM (a página HTML) estar completamente carregado
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- SELETORES DE ELEMENTOS ---
@@ -63,6 +62,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeModalBtn = document.getElementById('close-modal-btn');
     const cancelModalBtn = document.getElementById('cancel-modal-btn');
     const newOrderForm = document.getElementById('new-order-form');
+    const customerSelect = document.getElementById('customer-select');
+    const clientPhoneInput = document.getElementById('client-phone');
 
     // Seção de Relatórios
     const startDateInput = document.getElementById('start-date');
@@ -72,6 +73,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const generateReportBtn = document.getElementById('generate-report-btn');
     const downloadReportBtn = document.getElementById('download-report-btn');
 
+    // Modal de Clientes
+    const customersBtn = document.getElementById('customers-btn');
+    const customersModal = document.getElementById('customers-modal');
+    const customersModalContent = document.getElementById('customers-modal-content');
+    const closeCustomersModalBtn = document.getElementById('close-customers-modal-btn');
+    const newCustomerForm = document.getElementById('new-customer-form');
+    const customersList = document.getElementById('customers-list');
+
     // Modal de Confirmação
     const confirmModal = document.getElementById('confirm-modal');
     const confirmModalContent = document.getElementById('confirm-modal-content');
@@ -80,9 +89,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const confirmOkBtn = document.getElementById('confirm-ok-btn');
 
     let unsubscribeFromOrders = null; 
+    let unsubscribeFromCustomers = null;
     let confirmCallback = null;
-    let allOrdersCache = []; // Cache para guardar todas as ordens
-    let currentReportData = []; // Guarda os dados do relatório atual para download
+    let allOrdersCache = [];
+    let allCustomersCache = [];
+    let currentReportData = [];
 
     // --- LÓGICA DE AUTENTICAÇÃO ---
     onAuthStateChanged(auth, (user) => {
@@ -90,80 +101,140 @@ document.addEventListener('DOMContentLoaded', () => {
             loginSection.classList.add('hidden');
             dashboardSection.classList.remove('hidden');
             listenToOrders();
+            listenToCustomers();
         } else {
             dashboardSection.classList.add('hidden');
             loginSection.classList.remove('hidden');
-            if (unsubscribeFromOrders) {
-                unsubscribeFromOrders();
-            }
+            if (unsubscribeFromOrders) unsubscribeFromOrders();
+            if (unsubscribeFromCustomers) unsubscribeFromCustomers();
         }
     });
 
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const email = loginForm.email.value;
-        const password = loginForm.password.value;
         try {
-            await signInWithEmailAndPassword(auth, email, password);
+            await signInWithEmailAndPassword(auth, loginForm.email.value, loginForm.password.value);
         } catch (error) {
             console.error("Erro de login:", error.code);
-            alert('E-mail ou senha inválidos. Acesso não permitido.');
+            alert('E-mail ou senha inválidos.');
         }
     });
 
-    logoutBtn.addEventListener('click', () => {
-        signOut(auth);
-    });
+    logoutBtn.addEventListener('click', () => signOut(auth));
 
     // --- LÓGICA DOS MODAIS ---
     function openModal(modal, content) {
         if (!modal || !content) return;
         modal.classList.remove('hidden');
-        setTimeout(() => {
-            content.classList.remove('scale-95', 'opacity-0');
-            content.classList.add('scale-100', 'opacity-100');
-        }, 10);
+        setTimeout(() => content.classList.add('scale-100', 'opacity-100'), 10);
     }
 
     function closeModal(modal, content) {
         if (!modal || !content) return;
-        content.classList.add('scale-95', 'opacity-0');
         content.classList.remove('scale-100', 'opacity-100');
-        setTimeout(() => {
-            modal.classList.add('hidden');
-        }, 200);
+        setTimeout(() => modal.classList.add('hidden'), 200);
     }
 
-    // Eventos do Modal de Nova Ordem
     if(addOrderBtn) addOrderBtn.addEventListener('click', () => openModal(newOrderModal, modalContent));
     if(closeModalBtn) closeModalBtn.addEventListener('click', () => closeModal(newOrderModal, modalContent));
     if(cancelModalBtn) cancelModalBtn.addEventListener('click', () => closeModal(newOrderModal, modalContent));
+    
+    if(customersBtn) customersBtn.addEventListener('click', () => openModal(customersModal, customersModalContent));
+    if(closeCustomersModalBtn) closeCustomersModalBtn.addEventListener('click', () => closeModal(customersModal, customersModalContent));
 
-    // Eventos do Modal de Confirmação
     function showConfirm(message, callback) {
         confirmModalText.textContent = message;
         confirmCallback = callback;
         openModal(confirmModal, confirmModalContent);
     }
-    confirmCancelBtn.addEventListener('click', () => {
-        closeModal(confirmModal, confirmModalContent);
-        confirmCallback = null;
-    });
+    confirmCancelBtn.addEventListener('click', () => closeModal(confirmModal, confirmModalContent));
     confirmOkBtn.addEventListener('click', () => {
         if (confirmCallback) confirmCallback();
         closeModal(confirmModal, confirmModalContent);
-        confirmCallback = null;
+    });
+    
+    // --- LÓGICA DE CLIENTES ---
+    function listenToCustomers() {
+        const user = auth.currentUser;
+        if (!user) return;
+        if (unsubscribeFromCustomers) unsubscribeFromCustomers();
+
+        const q = query(collection(db, "customers"), where("ownerId", "==", user.uid), orderBy("name"));
+        unsubscribeFromCustomers = onSnapshot(q, (snapshot) => {
+            allCustomersCache = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            renderCustomersList();
+            populateCustomersDropdown();
+        });
+    }
+
+    function renderCustomersList() {
+        customersList.innerHTML = '';
+        if (allCustomersCache.length === 0) {
+            customersList.innerHTML = '<p class="text-gray-400">Nenhum cliente cadastrado.</p>';
+            return;
+        }
+        allCustomersCache.forEach(customer => {
+            const item = document.createElement('div');
+            item.className = 'bg-gray-700/50 p-3 rounded-lg flex justify-between items-center';
+            item.innerHTML = `
+                <div>
+                    <p class="font-semibold text-gray-200">${customer.name}</p>
+                    <p class="text-sm text-gray-400">${customer.phone}</p>
+                </div>
+            `;
+            customersList.appendChild(item);
+        });
+    }
+
+    function populateCustomersDropdown() {
+        customerSelect.innerHTML = '<option value="" disabled selected>Selecione um cliente</option>';
+        allCustomersCache.forEach(customer => {
+            const option = document.createElement('option');
+            option.value = customer.id;
+            option.textContent = customer.name;
+            option.dataset.phone = customer.phone;
+            customerSelect.appendChild(option);
+        });
+    }
+
+    customerSelect.addEventListener('change', (e) => {
+        const selectedOption = e.target.options[e.target.selectedIndex];
+        clientPhoneInput.value = selectedOption.dataset.phone || '';
+    });
+
+    newCustomerForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const user = auth.currentUser;
+        if (!user) return;
+
+        const newCustomerData = {
+            name: document.getElementById('new-customer-name').value,
+            phone: document.getElementById('new-customer-phone').value,
+            ownerId: user.uid
+        };
+
+        try {
+            await addDoc(collection(db, "customers"), newCustomerData);
+            newCustomerForm.reset();
+        } catch (error) {
+            console.error("Erro ao salvar cliente:", error);
+            alert("Erro ao salvar cliente.");
+        }
     });
 
     // --- LÓGICA DE ORDENS DE SERVIÇO ---
     newOrderForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const user = auth.currentUser;
-        if (!user) return alert("Você precisa estar logado para criar uma ordem.");
+        if (!user) return alert("Você precisa estar logado.");
+
+        const selectedOption = customerSelect.options[customerSelect.selectedIndex];
+        if (!selectedOption.value) return alert("Por favor, selecione um cliente.");
 
         const newOrderData = {
-            nomeCliente: document.getElementById('client-name').value,
-            telefoneCliente: document.getElementById('client-phone').value,
+            customerId: selectedOption.value,
+            nomeCliente: selectedOption.textContent,
+            telefoneCliente: clientPhoneInput.value,
             modeloTenis: document.getElementById('sneaker-model').value,
             valor: parseFloat(document.getElementById('service-value').value) || 0,
             observacoes: document.getElementById('observations').value,
@@ -284,7 +355,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (deleteBtn) {
             const orderId = deleteBtn.dataset.id;
-            showConfirm("Tem certeza que deseja excluir esta ordem de serviço? Esta ação não pode ser desfeita.", async () => {
+            showConfirm("Tem certeza que deseja excluir esta ordem de serviço?", async () => {
                 try {
                     await deleteDoc(doc(db, 'orders', orderId));
                 } catch (error) { console.error("Erro ao excluir ordem:", error); alert("Erro ao excluir a ordem."); }
@@ -293,13 +364,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- LÓGICA DE RELATÓRIOS ---
-    if (generateReportBtn) {
-        generateReportBtn.addEventListener('click', updateReportView);
-    }
-    if (downloadReportBtn) {
-        downloadReportBtn.addEventListener('click', downloadReport);
-    }
-
+    generateReportBtn.addEventListener('click', updateReportView);
+    downloadReportBtn.addEventListener('click', downloadReport);
 
     function updateReportView() {
         const startVal = startDateInput.value;
@@ -317,11 +383,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         let totalRevenue = 0;
-        currentReportData.forEach(order => {
-            totalRevenue += order.valor;
-        });
+        currentReportData.forEach(order => totalRevenue += order.valor);
 
-        // Atualiza o sumário
         reportSummary.innerHTML = `
             <h3 class="text-lg font-bold text-gray-200 mb-4">Resumo do Período</h3>
             <div class="space-y-3 text-gray-300">
@@ -330,7 +393,6 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `;
 
-        // Atualiza a lista de detalhes
         reportDetailsList.innerHTML = '';
         if (currentReportData.length > 0) {
             currentReportData.forEach(order => {
@@ -358,42 +420,34 @@ document.addEventListener('DOMContentLoaded', () => {
         updateReportView();
     }
 
-    // --- LÓGICA DE DOWNLOAD DO RELATÓRIO ---
     function downloadReport() {
         if (currentReportData.length === 0) {
-            alert("Não há dados no relatório atual para baixar.");
-            return;
+            return alert("Não há dados no relatório atual para baixar.");
         }
 
-        // Cabeçalho do CSV
         let csvContent = "data:text/csv;charset=utf-8,";
         csvContent += "Data Finalizacao,Cliente,Modelo Tenis,Valor,Observacoes\r\n";
 
-        // Linhas do CSV
         currentReportData.forEach(order => {
             const finalizationDate = new Intl.DateTimeFormat('pt-BR').format(order.dataFinalizacao.toDate());
-            const clientName = `"${order.nomeCliente.replace(/"/g, '""')}"`; // Trata aspas no nome
+            const clientName = `"${order.nomeCliente.replace(/"/g, '""')}"`;
             const sneakerModel = `"${order.modeloTenis.replace(/"/g, '""')}"`;
-            const value = order.valor.toString().replace('.', ','); // Formato de moeda brasileiro
+            const value = order.valor.toString().replace('.', ',');
             const observations = `"${(order.observacoes || '').replace(/"/g, '""')}"`;
             
             let row = [finalizationDate, clientName, sneakerModel, value, observations].join(",");
             csvContent += row + "\r\n";
         });
 
-        // Cria o link e dispara o download
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
-        const fileName = `relatorio_vendas_${startDateInput.value}_a_${endDateInput.value}.csv`;
-        link.setAttribute("download", fileName);
+        link.setAttribute("download", `relatorio_vendas_${startDateInput.value}_a_${endDateInput.value}.csv`);
         document.body.appendChild(link); 
         link.click();
         document.body.removeChild(link);
     }
 
-
-    // --- LÓGICA DE IMPRESSÃO ---
     function prepareAndPrintReceipt(order) {
         const entradaFmt = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(order.dataEntrada.toDate());
         const valorFmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.valor);
