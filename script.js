@@ -67,7 +67,7 @@ const endDateInput = document.getElementById('end-date');
 const reportSummary = document.getElementById('report-summary');
 const reportDetailsList = document.getElementById('report-details-list');
 const generateReportBtn = document.getElementById('generate-report-btn');
-const clearReportBtn = document.getElementById('clear-report-btn');
+const downloadReportBtn = document.getElementById('download-report-btn');
 
 // Modal de Confirmação
 const confirmModal = document.getElementById('confirm-modal');
@@ -79,6 +79,7 @@ const confirmOkBtn = document.getElementById('confirm-ok-btn');
 let unsubscribeFromOrders = null; 
 let confirmCallback = null;
 let allOrdersCache = []; // Cache para guardar todas as ordens
+let currentReportData = []; // Guarda os dados do relatório atual para download
 
 // --- LÓGICA DE AUTENTICAÇÃO ---
 onAuthStateChanged(auth, (user) => {
@@ -188,8 +189,8 @@ function listenToOrders() {
     const q = query(collection(db, "orders"), where("ownerId", "==", user.uid), orderBy("dataEntrada", "desc"));
     unsubscribeFromOrders = onSnapshot(q, (querySnapshot) => {
         allOrdersCache = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        renderFilteredOrders(); // Renderiza a lista com base no filtro atual
-        updateReportView(); // Atualiza o relatório com os dados novos
+        renderFilteredOrders();
+        setInitialDateRangeAndReport();
     }, (error) => console.error("Erro ao ouvir as ordens:", error));
 }
 
@@ -290,32 +291,25 @@ document.body.addEventListener('click', async (e) => {
 
 // --- LÓGICA DE RELATÓRIOS ---
 generateReportBtn.addEventListener('click', updateReportView);
-clearReportBtn.addEventListener('click', setInitialDateRange);
+downloadReportBtn.addEventListener('click', downloadReport);
 
 function updateReportView() {
     const startVal = startDateInput.value;
     const endVal = endDateInput.value;
     
-    // Converte a data do input (YYYY-MM-DD) para objetos Date do JS
-    // Adiciona o T00:00:00 para evitar problemas com fuso horário
     const startDate = startVal ? new Date(startVal + 'T00:00:00') : null;
     const endDate = endVal ? new Date(endVal + 'T23:59:59') : null;
 
-    // Filtra as ordens do cache que são finalizadas e estão dentro do período
-    const filteredOrders = allOrdersCache.filter(order => {
-        if (order.status !== 'finalizado' || !order.dataFinalizacao) {
-            return false;
-        }
+    currentReportData = allOrdersCache.filter(order => {
+        if (order.status !== 'finalizado' || !order.dataFinalizacao) return false;
         const finalizationDate = order.dataFinalizacao.toDate();
-        
         const afterStart = startDate ? finalizationDate >= startDate : true;
         const beforeEnd = endDate ? finalizationDate <= endDate : true;
-        
         return afterStart && beforeEnd;
     });
 
     let totalRevenue = 0;
-    filteredOrders.forEach(order => {
+    currentReportData.forEach(order => {
         totalRevenue += order.valor;
     });
 
@@ -323,15 +317,15 @@ function updateReportView() {
     reportSummary.innerHTML = `
         <h3 class="text-lg font-bold text-gray-200 mb-4">Resumo do Período</h3>
         <div class="space-y-3 text-gray-300">
-            <p class="flex justify-between"><span>Serviços Finalizados:</span> <span class="font-semibold">${filteredOrders.length}</span></p>
+            <p class="flex justify-between"><span>Serviços Finalizados:</span> <span class="font-semibold">${currentReportData.length}</span></p>
             <p class="flex justify-between text-xl"><span>Faturamento Total:</span> <span class="font-bold text-lime-400">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalRevenue)}</span></p>
         </div>
     `;
 
     // Atualiza a lista de detalhes
     reportDetailsList.innerHTML = '';
-    if (filteredOrders.length > 0) {
-        filteredOrders.forEach(order => {
+    if (currentReportData.length > 0) {
+        currentReportData.forEach(order => {
             const detailItem = document.createElement('div');
             detailItem.className = 'bg-gray-700/50 p-3 rounded-lg flex justify-between items-center';
             const finalizationDate = new Intl.DateTimeFormat('pt-BR').format(order.dataFinalizacao.toDate());
@@ -349,14 +343,46 @@ function updateReportView() {
     }
 }
 
-// Define as datas padrão para o dia atual ao carregar a página
-function setInitialDateRange() {
+function setInitialDateRangeAndReport() {
     const today = new Date().toISOString().split('T')[0];
     startDateInput.value = today;
     endDateInput.value = today;
-    updateReportView(); // Chama para carregar o relatório do dia
+    updateReportView();
 }
-setInitialDateRange();
+
+// --- LÓGICA DE DOWNLOAD DO RELATÓRIO ---
+function downloadReport() {
+    if (currentReportData.length === 0) {
+        alert("Não há dados no relatório atual para baixar.");
+        return;
+    }
+
+    // Cabeçalho do CSV
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "Data Finalizacao,Cliente,Modelo Tenis,Valor,Observacoes\r\n";
+
+    // Linhas do CSV
+    currentReportData.forEach(order => {
+        const finalizationDate = new Intl.DateTimeFormat('pt-BR').format(order.dataFinalizacao.toDate());
+        const clientName = `"${order.nomeCliente.replace(/"/g, '""')}"`; // Trata aspas no nome
+        const sneakerModel = `"${order.modeloTenis.replace(/"/g, '""')}"`;
+        const value = order.valor.toString().replace('.', ','); // Formato de moeda brasileiro
+        const observations = `"${(order.observacoes || '').replace(/"/g, '""')}"`;
+        
+        let row = [finalizationDate, clientName, sneakerModel, value, observations].join(",");
+        csvContent += row + "\r\n";
+    });
+
+    // Cria o link e dispara o download
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    const fileName = `relatorio_vendas_${startDateInput.value}_a_${endDateInput.value}.csv`;
+    link.setAttribute("download", fileName);
+    document.body.appendChild(link); 
+    link.click();
+    document.body.removeChild(link);
+}
 
 
 // --- LÓGICA DE IMPRESSÃO ---
