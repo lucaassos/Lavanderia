@@ -131,8 +131,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if(addOrderBtn) addOrderBtn.addEventListener('click', () => {
-        resetNewOrderForm();
         openModal(newOrderModal, modalContent);
+        resetNewOrderForm();
     });
     if(closeModalBtn) closeModalBtn.addEventListener('click', () => closeModal(newOrderModal, modalContent));
     if(cancelModalBtn) cancelModalBtn.addEventListener('click', () => closeModal(newOrderModal, modalContent));
