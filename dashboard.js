@@ -123,8 +123,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- LÓGICA DO DASHBOARD ---
-    startDateInput.addEventListener('change', updateDashboard);
-    endDateInput.addEventListener('change', updateDashboard);
+    if(startDateInput) startDateInput.addEventListener('change', updateDashboard);
+    if(endDateInput) endDateInput.addEventListener('change', updateDashboard);
     if(downloadReportBtn) downloadReportBtn.addEventListener('click', downloadDashboardReport);
     if(commissionToggleBtn) commissionToggleBtn.addEventListener('click', () => {
         commissionEnabled = !commissionEnabled;
