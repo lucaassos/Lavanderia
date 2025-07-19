@@ -1,10 +1,9 @@
 /*
   Arquivo de Scripts para o sistema Clean UP Shoes
-  Responsável por toda a interatividade da página.
-  Versão com Firebase (v9+ modular) e autenticação segura.
+  Responsável pela interatividade da página de Ordens de Serviço.
 */
 
-// --- IMPORTAÇÕES DO FIREBASE (Sintaxe Moderna v9+) ---
+// --- IMPORTAÇÕES DO FIREBASE ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { 
     getAuth, 
@@ -29,7 +28,7 @@ import {
 
 
 // --- INICIALIZAÇÃO E CONFIGURAÇÃO DO FIREBASE ---
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+c// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyBgIySTsWkoylC2WEUgF_EGzt3JVy3UHw0",
   authDomain: "lavanderia-clean-up.firebaseapp.com",
@@ -38,6 +37,7 @@ const firebaseConfig = {
   messagingSenderId: "6383817947",
   appId: "1:6383817947:web:9dca3543ad299afcd628fe",
 };
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -71,14 +71,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const serviceItemsContainer = document.getElementById('service-items-container');
     const addServiceBtn = document.getElementById('add-service-btn');
     const totalValueDisplay = document.getElementById('total-value-display');
-
-    // Seção de Relatórios
-    const startDateInput = document.getElementById('start-date');
-    const endDateInput = document.getElementById('end-date');
-    const reportSummary = document.getElementById('report-summary');
-    const reportDetailsList = document.getElementById('report-details-list');
-    const generateReportBtn = document.getElementById('generate-report-btn');
-    const downloadReportBtn = document.getElementById('download-report-btn');
     
     // Modal de Confirmação
     const confirmModal = document.getElementById('confirm-modal');
@@ -92,7 +84,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let confirmCallback = null;
     let allOrdersCache = [];
     let allCustomersCache = [];
-    let currentReportData = [];
     let currentOrderItems = [];
 
     // --- LÓGICA DE AUTENTICAÇÃO ---
@@ -265,7 +256,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 ${currentOrderItems.length > 1 ? `<button type="button" data-index="${index}" class="remove-service-btn absolute top-2 right-2 text-red-400 hover:text-red-300">&times;</button>` : ''}
             `;
             serviceItemsContainer.appendChild(itemEl);
-            // Pre-seleciona o serviço se já existir
             itemEl.querySelector('.service-type-select').value = item.service;
         });
         calculateTotal();
@@ -273,42 +263,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if(addServiceBtn) addServiceBtn.addEventListener('click', addServiceItem);
 
-    serviceItemsContainer.addEventListener('change', (e) => {
-        const index = e.target.dataset.index;
-        if (e.target.classList.contains('service-type-select')) {
-            const selectedOption = e.target.options[e.target.selectedIndex];
-            const price = selectedOption.dataset.price;
-            const valueInput = serviceItemsContainer.querySelector(`.service-value-input[data-index="${index}"]`);
-            
-            updateServiceItem(index, 'service', e.target.value);
-            
-            if (e.target.value === 'Outro') {
-                valueInput.value = '';
-                valueInput.readOnly = false;
-                valueInput.focus();
-            } else {
-                valueInput.value = price;
-                valueInput.readOnly = true;
-                updateServiceItem(index, 'price', price);
+    if(serviceItemsContainer) {
+        serviceItemsContainer.addEventListener('change', (e) => {
+            const index = e.target.dataset.index;
+            if (e.target.classList.contains('service-type-select')) {
+                const selectedOption = e.target.options[e.target.selectedIndex];
+                const price = selectedOption.dataset.price;
+                const valueInput = serviceItemsContainer.querySelector(`.service-value-input[data-index="${index}"]`);
+                
+                updateServiceItem(index, 'service', e.target.value);
+                
+                if (e.target.value === 'Outro') {
+                    valueInput.value = '';
+                    valueInput.readOnly = false;
+                    valueInput.focus();
+                } else {
+                    valueInput.value = price;
+                    valueInput.readOnly = true;
+                    updateServiceItem(index, 'price', price);
+                }
             }
-        }
-        if (e.target.classList.contains('service-value-input')) {
-            updateServiceItem(index, 'price', e.target.value);
-        }
-    });
+            if (e.target.classList.contains('service-value-input')) {
+                updateServiceItem(index, 'price', e.target.value);
+            }
+        });
 
-    serviceItemsContainer.addEventListener('input', (e) => {
-        const index = e.target.dataset.index;
-        if (e.target.classList.contains('service-item-input')) {
-            updateServiceItem(index, 'item', e.target.value);
-        }
-    });
+        serviceItemsContainer.addEventListener('input', (e) => {
+            const index = e.target.dataset.index;
+            if (e.target.classList.contains('service-item-input')) {
+                updateServiceItem(index, 'item', e.target.value);
+            }
+        });
 
-    serviceItemsContainer.addEventListener('click', (e) => {
-        if (e.target.classList.contains('remove-service-btn')) {
-            removeServiceItem(e.target.dataset.index);
-        }
-    });
+        serviceItemsContainer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-service-btn')) {
+                removeServiceItem(e.target.dataset.index);
+            }
+        });
+    }
 
     if(newOrderForm) newOrderForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -350,7 +342,6 @@ document.addEventListener('DOMContentLoaded', () => {
         unsubscribeFromOrders = onSnapshot(q, (querySnapshot) => {
             allOrdersCache = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             renderFilteredOrders();
-            setInitialDateRangeAndReport();
         }, (error) => console.error("Erro ao ouvir as ordens:", error));
     }
 
@@ -360,16 +351,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const searchTerm = searchInput.value.toLowerCase();
         const filtered = allOrdersCache.filter(order => {
             const clientName = order.nomeCliente.toLowerCase();
-            
-            // CORREÇÃO: Verifica se order.items existe antes de usar .some()
-            // e faz fallback para a estrutura antiga de dados se necessário.
             let itemsMatch = false;
             if (order.items && Array.isArray(order.items)) {
                 itemsMatch = order.items.some(item => item.item && item.item.toLowerCase().includes(searchTerm));
-            } else if (order.modeloTenis) { // Fallback para a estrutura antiga
+            } else if (order.modeloTenis) {
                 itemsMatch = order.modeloTenis.toLowerCase().includes(searchTerm);
             }
-            
             return clientName.includes(searchTerm) || itemsMatch;
         });
         renderOrderLists(filtered);
@@ -403,9 +390,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const dateObject = order.dataEntrada.toDate();
         const formattedDate = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(dateObject);
-        const formattedValue = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.valorTotal || order.valor); // Compatibilidade com valor antigo
+        const formattedValue = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.valorTotal || order.valor);
 
-        // Lógica para exibir múltiplos itens ou o item único antigo
         let itemsHtml = '';
         if (order.items && Array.isArray(order.items)) {
             itemsHtml = order.items.map(item => `
@@ -414,13 +400,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     <p class="text-gray-300">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.price)}</p>
                 </div>
             `).join('');
-        } else if (order.modeloTenis) { // Fallback para a estrutura antiga
+        } else if (order.modeloTenis) {
             itemsHtml = `
                 <div class="flex justify-between text-sm">
                     <p class="text-gray-300">${order.tipoServico || 'Serviço'} (<span class="text-gray-400">${order.modeloTenis}</span>)</p>
                 </div>`;
         }
-
 
         let finishButtonHtml = '';
         if (order.status === 'em_aberto') {
@@ -477,7 +462,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- LÓGICA DE RELATÓRIOS ---
+    // --- LÓGICA DE RELATÓRIOS (APENAS NA PÁGINA PRINCIPAL) ---
     if(generateReportBtn) generateReportBtn.addEventListener('click', updateReportView);
     if(downloadReportBtn) downloadReportBtn.addEventListener('click', downloadReport);
 
@@ -532,6 +517,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function setInitialDateRangeAndReport() {
+        if (!startDateInput || !endDateInput) return;
         const today = new Date().toISOString().split('T')[0];
         startDateInput.value = today;
         endDateInput.value = today;
