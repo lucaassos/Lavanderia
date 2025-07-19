@@ -45,7 +45,6 @@ const db = getFirestore(app);
 // --- ID DA CONTA DA LOJA (COMPARTILHADO) ---
 const companyId = "oNor7X6GwkcgWtsvyL0Dg4tamwI3";
 
-// Garante que todo o código só será executado após o carregamento completo da página.
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- SELETORES DE ELEMENTOS ---
