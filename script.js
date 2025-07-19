@@ -131,8 +131,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if(addOrderBtn) addOrderBtn.addEventListener('click', () => {
-        resetNewOrderForm();
         openModal(newOrderModal, modalContent);
+        resetNewOrderForm();
     });
     if(closeModalBtn) closeModalBtn.addEventListener('click', () => closeModal(newOrderModal, modalContent));
     if(cancelModalBtn) cancelModalBtn.addEventListener('click', () => closeModal(newOrderModal, modalContent));
@@ -349,6 +349,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if(searchInput) searchInput.addEventListener('input', renderFilteredOrders);
 
     function renderFilteredOrders() {
+        if (!searchInput) return;
         const searchTerm = searchInput.value.toLowerCase();
         const filtered = allOrdersCache.filter(order => {
             const clientName = order.nomeCliente.toLowerCase();
