@@ -38,7 +38,6 @@ const firebaseConfig = {
   messagingSenderId: "6383817947",
   appId: "1:6383817947:web:9dca3543ad299afcd628fe",
 };
-
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -361,7 +360,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const searchTerm = searchInput.value.toLowerCase();
         const filtered = allOrdersCache.filter(order => {
             const clientName = order.nomeCliente.toLowerCase();
-            const itemsMatch = order.items.some(item => item.item.toLowerCase().includes(searchTerm));
+            
+            // CORREÇÃO: Verifica se order.items existe antes de usar .some()
+            // e faz fallback para a estrutura antiga de dados se necessário.
+            let itemsMatch = false;
+            if (order.items && Array.isArray(order.items)) {
+                itemsMatch = order.items.some(item => item.item && item.item.toLowerCase().includes(searchTerm));
+            } else if (order.modeloTenis) { // Fallback para a estrutura antiga
+                itemsMatch = order.modeloTenis.toLowerCase().includes(searchTerm);
+            }
+            
             return clientName.includes(searchTerm) || itemsMatch;
         });
         renderOrderLists(filtered);
@@ -395,14 +403,24 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const dateObject = order.dataEntrada.toDate();
         const formattedDate = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(dateObject);
-        const formattedValue = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.valorTotal);
+        const formattedValue = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.valorTotal || order.valor); // Compatibilidade com valor antigo
 
-        const itemsHtml = order.items.map(item => `
-            <div class="flex justify-between text-sm">
-                <p class="text-gray-300">${item.service} (<span class="text-gray-400">${item.item}</span>)</p>
-                <p class="text-gray-300">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.price)}</p>
-            </div>
-        `).join('');
+        // Lógica para exibir múltiplos itens ou o item único antigo
+        let itemsHtml = '';
+        if (order.items && Array.isArray(order.items)) {
+            itemsHtml = order.items.map(item => `
+                <div class="flex justify-between text-sm">
+                    <p class="text-gray-300">${item.service} (<span class="text-gray-400">${item.item}</span>)</p>
+                    <p class="text-gray-300">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.price)}</p>
+                </div>
+            `).join('');
+        } else if (order.modeloTenis) { // Fallback para a estrutura antiga
+            itemsHtml = `
+                <div class="flex justify-between text-sm">
+                    <p class="text-gray-300">${order.tipoServico || 'Serviço'} (<span class="text-gray-400">${order.modeloTenis}</span>)</p>
+                </div>`;
+        }
+
 
         let finishButtonHtml = '';
         if (order.status === 'em_aberto') {
@@ -479,7 +497,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         let totalRevenue = 0;
-        currentReportData.forEach(order => totalRevenue += order.valorTotal);
+        currentReportData.forEach(order => totalRevenue += (order.valorTotal || order.valor));
 
         reportSummary.innerHTML = `
             <h3 class="text-lg font-bold text-gray-200 mb-4">Resumo do Período</h3>
@@ -495,12 +513,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 const detailItem = document.createElement('div');
                 detailItem.className = 'bg-gray-700/50 p-3 rounded-lg flex justify-between items-center';
                 const finalizationDate = new Intl.DateTimeFormat('pt-BR').format(order.dataFinalizacao.toDate());
+                const itemsText = (order.items && Array.isArray(order.items)) 
+                    ? order.items.map(i => i.item).join(', ') 
+                    : order.modeloTenis;
+
                 detailItem.innerHTML = `
                     <div>
                         <p class="font-semibold text-gray-200">${order.nomeCliente}</p>
-                        <p class="text-sm text-gray-400">${order.items.map(i => i.item).join(', ')} - Finalizado em ${finalizationDate}</p>
+                        <p class="text-sm text-gray-400">${itemsText} - Finalizado em ${finalizationDate}</p>
                     </div>
-                    <p class="font-bold text-lime-400">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.valorTotal)}</p>
+                    <p class="font-bold text-lime-400">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.valorTotal || order.valor)}</p>
                 `;
                 reportDetailsList.appendChild(detailItem);
             });
@@ -527,8 +549,8 @@ document.addEventListener('DOMContentLoaded', () => {
         currentReportData.forEach(order => {
             const finalizationDate = new Intl.DateTimeFormat('pt-BR').format(order.dataFinalizacao.toDate());
             const clientName = `"${order.nomeCliente.replace(/"/g, '""')}"`;
-            const items = `"${order.items.map(i => `${i.service} (${i.item})`).join('; ')}"`;
-            const value = order.valorTotal.toString().replace('.', ',');
+            const items = `"${order.items ? order.items.map(i => `${i.service} (${i.item})`).join('; ') : order.modeloTenis}"`;
+            const value = (order.valorTotal || order.valor).toString().replace('.', ',');
             const observations = `"${(order.observacoes || '').replace(/"/g, '""')}"`;
             
             let row = [finalizationDate, clientName, items, value, observations].join(",");
@@ -546,11 +568,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function prepareAndPrintReceipt(order) {
         const entradaFmt = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(order.dataEntrada.toDate());
-        const valorFmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.valorTotal);
+        const valorFmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.valorTotal || order.valor);
 
-        const itemsHtml = order.items.map(item => 
+        const itemsHtml = (order.items && Array.isArray(order.items)) ? order.items.map(item => 
             `<p><strong>Serviço:</strong> ${item.service}<br><strong>Item:</strong> ${item.item}<br><strong>Valor:</strong> ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.price)}</p>`
-        ).join('<hr style="border: 0; border-top: 1px dashed #ccc; margin: 5px 0;">');
+        ).join('<hr style="border: 0; border-top: 1px dashed #ccc; margin: 5px 0;">') : `<p><strong>Item:</strong> ${order.modeloTenis}</p>`;
 
         const receiptHTML = `
             <div style="font-family: 'Courier New', Courier, monospace; width: 280px; padding: 10px; font-size: 12px; color: #000; line-height: 1.4;">
