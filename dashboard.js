@@ -46,9 +46,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const newExpenseForm = document.getElementById('new-expense-form');
     const salesDetailsList = document.getElementById('sales-details-list');
     const expensesDetailsList = document.getElementById('expenses-details-list');
+    const downloadReportBtn = document.getElementById('download-dashboard-report-btn');
 
     let allOrdersCache = [];
     let allExpensesCache = [];
+    let currentFilteredSales = [];
+    let currentFilteredExpenses = [];
     let unsubscribeFromOrders = null;
     let unsubscribeFromExpenses = null;
 
@@ -109,6 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- LÓGICA DO DASHBOARD ---
     startDateInput.addEventListener('change', updateDashboard);
     endDateInput.addEventListener('change', updateDashboard);
+    if(downloadReportBtn) downloadReportBtn.addEventListener('click', downloadDashboardReport);
 
     function setInitialDateRange() {
         const today = new Date().toISOString().split('T')[0];
@@ -120,34 +124,29 @@ document.addEventListener('DOMContentLoaded', () => {
         const startDate = new Date(startDateInput.value + 'T00:00:00');
         const endDate = new Date(endDateInput.value + 'T23:59:59');
 
-        // Filtra Vendas
-        const filteredSales = allOrdersCache.filter(order => {
+        currentFilteredSales = allOrdersCache.filter(order => {
             if (order.status !== 'finalizado' || !order.dataFinalizacao) return false;
             const finalizationDate = order.dataFinalizacao.toDate();
             return finalizationDate >= startDate && finalizationDate <= endDate;
         });
 
-        // Filtra Despesas
-        const filteredExpenses = allExpensesCache.filter(expense => {
+        currentFilteredExpenses = allExpensesCache.filter(expense => {
             const expenseDate = expense.date.toDate();
             return expenseDate >= startDate && expenseDate <= endDate;
         });
 
-        // Calcula KPIs
-        const grossRevenue = filteredSales.reduce((sum, order) => sum + (order.valorTotal || order.valor), 0);
-        const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + expense.value, 0);
+        const grossRevenue = currentFilteredSales.reduce((sum, order) => sum + (order.valorTotal || order.valor), 0);
+        const totalExpenses = currentFilteredExpenses.reduce((sum, expense) => sum + expense.value, 0);
         const netProfit = grossRevenue - totalExpenses;
 
-        // Atualiza a UI
         grossRevenueEl.textContent = formatCurrency(grossRevenue);
         totalExpensesEl.textContent = formatCurrency(totalExpenses);
         netProfitEl.textContent = formatCurrency(netProfit);
         
-        renderDetailsLists(filteredSales, filteredExpenses);
+        renderDetailsLists(currentFilteredSales, currentFilteredExpenses);
     }
 
     function renderDetailsLists(sales, expenses) {
-        // Renderiza lista de vendas
         salesDetailsList.innerHTML = '';
         if (sales.length > 0) {
             sales.forEach(order => {
@@ -163,7 +162,6 @@ document.addEventListener('DOMContentLoaded', () => {
             salesDetailsList.innerHTML = '<p class="text-sm text-gray-400">Nenhuma venda no período.</p>';
         }
 
-        // Renderiza lista de despesas
         expensesDetailsList.innerHTML = '';
         if (expenses.length > 0) {
             expenses.forEach(expense => {
@@ -178,6 +176,41 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             expensesDetailsList.innerHTML = '<p class="text-sm text-gray-400">Nenhuma despesa no período.</p>';
         }
+    }
+    
+    function downloadDashboardReport() {
+        if (currentFilteredSales.length === 0 && currentFilteredExpenses.length === 0) {
+            return alert("Não há dados para baixar no período selecionado.");
+        }
+
+        let csvContent = "data:text/csv;charset=utf-8,";
+        csvContent += "Data,Tipo,Descricao,Valor\r\n";
+
+        // Adiciona vendas ao CSV
+        currentFilteredSales.forEach(order => {
+            const date = new Intl.DateTimeFormat('pt-BR').format(order.dataFinalizacao.toDate());
+            const type = "Venda";
+            const description = `"${order.nomeCliente} - ${order.items ? order.items.map(i => i.item).join(', ') : order.modeloTenis}"`;
+            const value = (order.valorTotal || order.valor).toString().replace('.', ',');
+            csvContent += `${date},${type},${description},${value}\r\n`;
+        });
+        
+        // Adiciona despesas ao CSV
+        currentFilteredExpenses.forEach(expense => {
+            const date = new Intl.DateTimeFormat('pt-BR').format(expense.date.toDate());
+            const type = "Despesa";
+            const description = `"${expense.description}"`;
+            const value = `-${expense.value.toString().replace('.', ',')}`; // Valor negativo para despesa
+            csvContent += `${date},${type},${description},${value}\r\n`;
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `relatorio_financeiro_${startDateInput.value}_a_${endDateInput.value}.csv`);
+        document.body.appendChild(link); 
+        link.click();
+        document.body.removeChild(link);
     }
 
     function formatCurrency(value) {
