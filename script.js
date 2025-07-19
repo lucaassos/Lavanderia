@@ -45,6 +45,7 @@ const db = getFirestore(app);
 // --- ID DA CONTA DA LOJA (COMPARTILHADO) ---
 const companyId = "oNor7X6GwkcgWtsvyL0Dg4tamwI3";
 
+// Garante que todo o código só será executado após o carregamento completo da página.
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- SELETORES DE ELEMENTOS ---
@@ -71,6 +72,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const serviceItemsContainer = document.getElementById('service-items-container');
     const addServiceBtn = document.getElementById('add-service-btn');
     const totalValueDisplay = document.getElementById('total-value-display');
+    const serviceTypeSelect = document.getElementById('service-type');
+    const serviceValueInput = document.getElementById('service-value');
     
     // Modal de Confirmação
     const confirmModal = document.getElementById('confirm-modal');
@@ -195,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- LÓGICA DE ORDENS DE SERVIÇO ---
     function resetNewOrderForm() {
-        newOrderForm.reset();
+        if(newOrderForm) newOrderForm.reset();
         customerSearchInput.value = '';
         selectedCustomerIdInput.value = '';
         clientPhoneInput.value = '';
@@ -222,10 +225,11 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function calculateTotal() {
         const total = currentOrderItems.reduce((sum, item) => sum + parseFloat(item.price || 0), 0);
-        totalValueDisplay.textContent = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(total);
+        if(totalValueDisplay) totalValueDisplay.textContent = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(total);
     }
 
     function renderServiceItems() {
+        if(!serviceItemsContainer) return;
         serviceItemsContainer.innerHTML = '';
         currentOrderItems.forEach((item, index) => {
             const itemEl = document.createElement('div');
@@ -461,96 +465,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
     });
-
-    // --- LÓGICA DE RELATÓRIOS (APENAS NA PÁGINA PRINCIPAL) ---
-    if(generateReportBtn) generateReportBtn.addEventListener('click', updateReportView);
-    if(downloadReportBtn) downloadReportBtn.addEventListener('click', downloadReport);
-
-    function updateReportView() {
-        const startVal = startDateInput.value;
-        const endVal = endDateInput.value;
-        
-        const startDate = startVal ? new Date(startVal + 'T00:00:00') : null;
-        const endDate = endVal ? new Date(endVal + 'T23:59:59') : null;
-
-        currentReportData = allOrdersCache.filter(order => {
-            if (order.status !== 'finalizado' || !order.dataFinalizacao) return false;
-            const finalizationDate = order.dataFinalizacao.toDate();
-            const afterStart = startDate ? finalizationDate >= startDate : true;
-            const beforeEnd = endDate ? finalizationDate <= endDate : true;
-            return afterStart && beforeEnd;
-        });
-
-        let totalRevenue = 0;
-        currentReportData.forEach(order => totalRevenue += (order.valorTotal || order.valor));
-
-        reportSummary.innerHTML = `
-            <h3 class="text-lg font-bold text-gray-200 mb-4">Resumo do Período</h3>
-            <div class="space-y-3 text-gray-300">
-                <p class="flex justify-between"><span>Ordens Finalizadas:</span> <span class="font-semibold">${currentReportData.length}</span></p>
-                <p class="flex justify-between text-xl"><span>Faturamento Total:</span> <span class="font-bold text-lime-400">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalRevenue)}</span></p>
-            </div>
-        `;
-
-        reportDetailsList.innerHTML = '';
-        if (currentReportData.length > 0) {
-            currentReportData.forEach(order => {
-                const detailItem = document.createElement('div');
-                detailItem.className = 'bg-gray-700/50 p-3 rounded-lg flex justify-between items-center';
-                const finalizationDate = new Intl.DateTimeFormat('pt-BR').format(order.dataFinalizacao.toDate());
-                const itemsText = (order.items && Array.isArray(order.items)) 
-                    ? order.items.map(i => i.item).join(', ') 
-                    : order.modeloTenis;
-
-                detailItem.innerHTML = `
-                    <div>
-                        <p class="font-semibold text-gray-200">${order.nomeCliente}</p>
-                        <p class="text-sm text-gray-400">${itemsText} - Finalizado em ${finalizationDate}</p>
-                    </div>
-                    <p class="font-bold text-lime-400">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.valorTotal || order.valor)}</p>
-                `;
-                reportDetailsList.appendChild(detailItem);
-            });
-        } else {
-            reportDetailsList.innerHTML = '<p class="text-gray-400">Nenhuma venda finalizada no período selecionado.</p>';
-        }
-    }
-
-    function setInitialDateRangeAndReport() {
-        if (!startDateInput || !endDateInput) return;
-        const today = new Date().toISOString().split('T')[0];
-        startDateInput.value = today;
-        endDateInput.value = today;
-        updateReportView();
-    }
-
-    function downloadReport() {
-        if (currentReportData.length === 0) {
-            return alert("Não há dados no relatório atual para baixar.");
-        }
-
-        let csvContent = "data:text/csv;charset=utf-8,";
-        csvContent += "Data Finalizacao,Cliente,Itens,Valor Total,Observacoes\r\n";
-
-        currentReportData.forEach(order => {
-            const finalizationDate = new Intl.DateTimeFormat('pt-BR').format(order.dataFinalizacao.toDate());
-            const clientName = `"${order.nomeCliente.replace(/"/g, '""')}"`;
-            const items = `"${order.items ? order.items.map(i => `${i.service} (${i.item})`).join('; ') : order.modeloTenis}"`;
-            const value = (order.valorTotal || order.valor).toString().replace('.', ',');
-            const observations = `"${(order.observacoes || '').replace(/"/g, '""')}"`;
-            
-            let row = [finalizationDate, clientName, items, value, observations].join(",");
-            csvContent += row + "\r\n";
-        });
-
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `relatorio_vendas_${startDateInput.value}_a_${endDateInput.value}.csv`);
-        document.body.appendChild(link); 
-        link.click();
-        document.body.removeChild(link);
-    }
 
     function prepareAndPrintReceipt(order) {
         const entradaFmt = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(order.dataEntrada.toDate());
