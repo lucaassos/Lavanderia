@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clean UP Shoes - Dashboard Financeiro</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Permanent+Marker&display=swap" rel="stylesheet">
+    
+    <!-- Link para seu arquivo de CSS customizado -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gray-800 text-gray-200">
+
+    <header class="bg-gray-900 shadow-lg sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <h1 class="font-logo text-3xl text-lime-400">Clean UP</h1>
+                <span class="text-gray-500 text-2xl font-light">|</span>
+                <h2 class="text-xl font-semibold text-gray-300 pt-1">Dashboard Financeiro</h2>
+            </div>
+            <div class="flex items-center gap-4">
+                <a href="index.html" class="flex items-center gap-2 bg-gray-700 text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors duration-300 font-semibold shadow-md">
+                    Ordens de Serviço
+                </a>
+                <a href="clientes.html" class="flex items-center gap-2 bg-gray-700 text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors duration-300 font-semibold shadow-md">
+                    Clientes
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Filtro de Data e KPIs -->
+        <div class="mb-8 bg-gray-900/50 p-6 rounded-lg border border-gray-700">
+            <div class="flex flex-wrap items-end gap-4 mb-6 pb-6 border-b border-gray-700">
+                <div>
+                    <label for="start-date" class="block text-sm font-medium text-gray-400">Data de Início</label>
+                    <input type="date" id="start-date" class="w-full px-4 py-2 mt-1 text-gray-200 bg-gray-700 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-lime-500">
+                </div>
+                <div>
+                    <label for="end-date" class="block text-sm font-medium text-gray-400">Data de Fim</label>
+                    <input type="date" id="end-date" class="w-full px-4 py-2 mt-1 text-gray-200 bg-gray-700 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-lime-500">
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                <div>
+                    <p class="text-sm font-medium text-gray-400">FATURAMENTO BRUTO</p>
+                    <p id="gross-revenue" class="text-3xl font-bold text-lime-400 mt-1">R$ 0,00</p>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-400">TOTAL DE DESPESAS</p>
+                    <p id="total-expenses" class="text-3xl font-bold text-red-400 mt-1">R$ 0,00</p>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-400">LUCRO LÍQUIDO</p>
+                    <p id="net-profit" class="text-3xl font-bold text-green-400 mt-1">R$ 0,00</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Adicionar Despesa -->
+            <div class="lg:col-span-1">
+                <div class="bg-gray-900/50 p-6 rounded-lg border border-gray-700">
+                    <h3 class="text-xl font-bold mb-4 text-gray-200">Adicionar Despesa</h3>
+                    <form id="new-expense-form" class="space-y-4">
+                        <div>
+                            <label for="expense-description" class="block text-sm font-medium text-gray-400">Descrição</label>
+                            <input type="text" id="expense-description" required class="w-full px-4 py-2 mt-1 text-gray-200 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500">
+                        </div>
+                        <div>
+                            <label for="expense-value" class="block text-sm font-medium text-gray-400">Valor (R$)</label>
+                            <input type="number" step="0.01" id="expense-value" required class="w-full px-4 py-2 mt-1 text-gray-200 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500">
+                        </div>
+                        <div class="flex justify-end pt-2">
+                            <button type="submit" class="btn-gradient text-gray-900 px-6 py-2 rounded-lg hover:opacity-90 font-semibold shadow-md">Adicionar Despesa</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <!-- Detalhes do Período -->
+            <div class="lg:col-span-2">
+                <div class="bg-gray-900/50 p-6 rounded-lg border border-gray-700">
+                    <h3 class="text-xl font-bold mb-4 text-gray-200">Detalhes do Período</h3>
+                    <div class="grid grid-cols-2 gap-6">
+                        <div>
+                            <h4 class="font-semibold text-lime-400 mb-2">Vendas</h4>
+                            <div id="sales-details-list" class="space-y-2 max-h-64 overflow-y-auto pr-2"></div>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-red-400 mb-2">Despesas</h4>
+                            <div id="expenses-details-list" class="space-y-2 max-h-64 overflow-y-auto pr-2"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Link para o novo arquivo JavaScript -->
+    <script src="dashboard.js" type="module"></script>
+</body>
+</html>
