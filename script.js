@@ -89,8 +89,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- LÓGICA DE AUTENTICAÇÃO ---
     onAuthStateChanged(auth, (user) => {
         if (user) {
-            loginSection.classList.add('hidden');
-            dashboardSection.classList.remove('hidden');
+            if (loginSection) loginSection.classList.add('hidden');
+            if (dashboardSection) dashboardSection.classList.remove('hidden');
             if(addOrderBtn) {
                 addOrderBtn.disabled = true;
                 addOrderBtn.classList.add('opacity-50', 'cursor-not-allowed');
@@ -98,8 +98,8 @@ document.addEventListener('DOMContentLoaded', () => {
             listenToOrders();
             listenToCustomers();
         } else {
-            dashboardSection.classList.add('hidden');
-            loginSection.classList.remove('hidden');
+            if (dashboardSection) dashboardSection.classList.add('hidden');
+            if (loginSection) loginSection.classList.remove('hidden');
             if (unsubscribeFromOrders) unsubscribeFromOrders();
             if (unsubscribeFromCustomers) unsubscribeFromCustomers();
         }
@@ -131,8 +131,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if(addOrderBtn) addOrderBtn.addEventListener('click', () => {
-        openModal(newOrderModal, modalContent);
         resetNewOrderForm();
+        openModal(newOrderModal, modalContent);
     });
     if(closeModalBtn) closeModalBtn.addEventListener('click', () => closeModal(newOrderModal, modalContent));
     if(cancelModalBtn) cancelModalBtn.addEventListener('click', () => closeModal(newOrderModal, modalContent));
