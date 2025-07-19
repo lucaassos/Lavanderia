@@ -54,16 +54,17 @@
                 <div class="flex items-center gap-3">
                     <h1 class="font-logo text-3xl text-lime-400">Clean UP</h1>
                     <span class="text-gray-500 text-2xl font-light">|</span>
-                    <h2 class="text-xl font-semibold text-gray-300 pt-1">Painel de Controle</h2>
+                    <h2 class="text-xl font-semibold text-gray-300 pt-1">Ordens de Serviço</h2>
                 </div>
                 <div class="flex items-center gap-4">
-                    <a href="clientes.html" id="customers-btn" class="flex items-center gap-2 bg-gray-700 text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors duration-300 font-semibold shadow-md">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path d="M10 8a3 3 0 100-6 3 3 0 000 6zM3.465 14.493a1.23 1.23 0 00.41 1.412A9.957 9.957 0 0010 18c2.31 0 4.438-.784 6.131-2.095a1.23 1.23 0 00.41-1.412A9.99 9.99 0 0010 12.75a9.99 9.99 0 00-6.535 1.743z" /></svg>
+                    <a href="dashboard.html" class="flex items-center gap-2 bg-gray-700 text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors duration-300 font-semibold shadow-md">
+                        Dashboard
+                    </a>
+                    <a href="clientes.html" class="flex items-center gap-2 bg-gray-700 text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors duration-300 font-semibold shadow-md">
                         Clientes
                     </a>
                     <button id="add-order-btn" class="flex items-center gap-2 btn-gradient text-gray-900 px-4 py-2 rounded-lg hover:opacity-90 transition-opacity duration-300 font-semibold shadow-md">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" /></svg>
-                        Nova Ordem
+                        + Nova Ordem
                     </button>
                     <button id="logout-btn" class="text-gray-500 hover:text-red-500 transition-colors duration-300" title="Sair">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-6 h-6"><path fill-rule="evenodd" d="M3 4.25A2.25 2.25 0 015.25 2h5.5A2.25 2.25 0 0113 4.25v2a.75.75 0 01-1.5 0v-2a.75.75 0 00-.75-.75h-5.5a.75.75 0 00-.75.75v11.5c0 .414.336.75.75.75h5.5a.75.75 0 00.75-.75v-2a.75.75 0 011.5 0v2A2.25 2.25 0 0110.75 18h-5.5A2.25 2.25 0 013 15.75V4.25z" clip-rule="evenodd" /><path fill-rule="evenodd" d="M16.78 9.22a.75.75 0 011.06 0l3 3a.75.75 0 010 1.06l-3 3a.75.75 0 11-1.06-1.06L18.44 12l-1.68-1.68a.75.75 0 010-1.06z" clip-rule="evenodd" /></svg>
@@ -73,35 +74,6 @@
         </header>
 
         <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            
-            <!-- Seção de Relatórios -->
-            <div id="report-section" class="mb-8 bg-gray-900/50 p-6 rounded-lg border border-gray-700">
-                <h2 class="text-2xl font-bold mb-6 text-gray-200">Relatório de Vendas</h2>
-                <div class="flex flex-wrap items-end gap-4 mb-6 pb-6 border-b border-gray-700">
-                    <div>
-                        <label for="start-date" class="block text-sm font-medium text-gray-400">Data de Início</label>
-                        <input type="date" id="start-date" class="w-full px-4 py-2 mt-1 text-gray-200 bg-gray-700 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-lime-500">
-                    </div>
-                    <div>
-                        <label for="end-date" class="block text-sm font-medium text-gray-400">Data de Fim</label>
-                        <input type="date" id="end-date" class="w-full px-4 py-2 mt-1 text-gray-200 bg-gray-700 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-lime-500">
-                    </div>
-                    <div class="flex gap-2">
-                         <button id="generate-report-btn" class="btn-gradient text-gray-900 px-6 py-2 rounded-lg hover:opacity-90 font-semibold shadow-md transition-opacity">Gerar Relatório</button>
-                         <button id="download-report-btn" class="bg-gray-600 text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-500 font-semibold transition-colors flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path d="M10.75 2.75a.75.75 0 00-1.5 0v8.614L6.295 8.235a.75.75 0 10-1.09 1.03l4.25 4.5a.75.75 0 001.09 0l4.25-4.5a.75.75 0 00-1.09-1.03l-2.955 3.129V2.75z" /><path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z" /></svg>
-                            Baixar (CSV)
-                        </button>
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <!-- Sumário -->
-                    <div id="report-summary" class="md:col-span-1 bg-gray-800 p-6 rounded-lg"></div>
-                    <!-- Detalhes -->
-                    <div id="report-details-list" class="md:col-span-2 space-y-3 max-h-64 overflow-y-auto pr-2"></div>
-                </div>
-            </div>
-
             <div class="mb-8">
                 <div class="relative">
                     <input type="text" id="search-input" placeholder="Buscar por cliente ou tênis..." class="w-full px-4 py-3 text-lg text-gray-200 bg-gray-700/50 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500">
@@ -123,77 +95,9 @@
             </div>
         </main>
     </div>
-
-    <!-- Modal para Nova Ordem de Serviço -->
-    <div id="new-order-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center z-50 p-4">
-        <div class="bg-gray-800 border border-lime-500/20 rounded-2xl shadow-2xl p-8 w-full max-w-2xl transform transition-all scale-95 opacity-0" id="modal-content">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-2xl font-bold text-gray-200">Nova Ordem de Serviço</h3>
-                <button id="close-modal-btn" class="text-gray-500 hover:text-gray-300 text-3xl">&times;</button>
-            </div>
-            <form id="new-order-form" class="space-y-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label for="customer-search-input" class="block text-sm font-medium text-gray-400">Cliente</label>
-                        <div class="flex items-center gap-2 mt-1">
-                            <div class="flex-grow relative">
-                                <input type="text" id="customer-search-input" placeholder="Digite para buscar..." autocomplete="off" required class="w-full px-4 py-2 text-gray-200 bg-gray-700 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-lime-500">
-                                <input type="hidden" id="selected-customer-id">
-                                <div id="customer-search-results" class="hidden absolute w-full mt-1 bg-gray-900 border border-gray-600 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto"></div>
-                            </div>
-                            <a href="clientes.html" title="Cadastrar Novo Cliente" class="flex-shrink-0 bg-gray-600 text-gray-200 h-10 w-10 flex items-center justify-center rounded-lg hover:bg-gray-500 font-semibold transition-colors text-xl">+</a>
-                        </div>
-                    </div>
-                    <div>
-                        <label for="client-phone" class="block text-sm font-medium text-gray-400">Telefone</label>
-                        <input type="tel" id="client-phone" readonly class="w-full px-4 py-2 mt-1 text-gray-400 bg-gray-900/50 border border-gray-600 rounded-lg shadow-sm">
-                    </div>
-                </div>
-                
-                <div id="service-items-container" class="space-y-4 pt-4 border-t border-gray-700 max-h-64 overflow-y-auto pr-2">
-                    <!-- Itens de serviço serão injetados aqui -->
-                </div>
-
-                <div class="flex justify-between items-center pt-4">
-                    <button type="button" id="add-service-btn" class="flex items-center gap-2 bg-gray-600 text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-500 font-semibold transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" /></svg>
-                        Adicionar Serviço
-                    </button>
-                    <div class="text-right">
-                        <p class="text-sm font-medium text-gray-400">VALOR TOTAL</p>
-                        <p id="total-value-display" class="text-3xl font-bold text-lime-400">R$ 0,00</p>
-                    </div>
-                </div>
-
-                <div>
-                    <label for="observations" class="block text-sm font-medium text-gray-400">Observações Gerais</label>
-                    <textarea id="observations" rows="2" class="w-full px-4 py-2 mt-1 text-gray-200 bg-gray-700 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-lime-500"></textarea>
-                </div>
-                <div class="flex justify-end pt-6 gap-4 border-t border-gray-700">
-                    <button type="button" id="cancel-modal-btn" class="bg-gray-600 text-gray-200 px-6 py-2 rounded-lg hover:bg-gray-500 font-semibold transition-colors">Cancelar</button>
-                    <button type="submit" class="btn-gradient text-gray-900 px-6 py-2 rounded-lg hover:opacity-90 font-semibold shadow-md transition-opacity">Salvar Ordem</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal de Confirmação para Exclusão -->
-    <div id="confirm-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center z-50 p-4">
-        <div class="bg-gray-800 border border-red-500/20 rounded-2xl shadow-2xl p-8 w-full max-w-md transform transition-all scale-95 opacity-0" id="confirm-modal-content">
-            <h3 class="text-xl font-bold text-gray-200">Confirmar Exclusão</h3>
-            <p id="confirm-modal-text" class="text-gray-400 mt-4">Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.</p>
-            <div class="flex justify-end pt-6 gap-4">
-                <button type="button" id="confirm-cancel-btn" class="bg-gray-600 text-gray-200 px-6 py-2 rounded-lg hover:bg-gray-500 font-semibold transition-colors">Cancelar</button>
-                <button type="button" id="confirm-ok-btn" class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 font-semibold shadow-md transition-opacity">Excluir</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Área de Impressão (Oculta) -->
-    <div id="print-area" class="hidden"></div>
-
-    <!-- Link para seu arquivo JavaScript como um módulo -->
+    
+    <!-- Modals e outros elementos... -->
+    
     <script src="script.js" type="module"></script>
-
 </body>
 </html>
