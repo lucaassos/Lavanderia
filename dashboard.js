@@ -28,7 +28,6 @@ const firebaseConfig = {
   storageBucket: "lavanderia-clean-up.firebasestorage.app",
   messagingSenderId: "6383817947",
   appId: "1:6383817947:web:9dca3543ad299afcd628fe",
-  measurementId: "G-QDB5FNBDWE"
 };
 
 const app = initializeApp(firebaseConfig);
