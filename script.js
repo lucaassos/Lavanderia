@@ -71,8 +71,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const serviceItemsContainer = document.getElementById('service-items-container');
     const addServiceBtn = document.getElementById('add-service-btn');
     const totalValueDisplay = document.getElementById('total-value-display');
-    const serviceTypeSelect = document.getElementById('service-type');
-    const serviceValueInput = document.getElementById('service-value');
     
     // Modal de Confirmação
     const confirmModal = document.getElementById('confirm-modal');
