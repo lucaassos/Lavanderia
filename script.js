@@ -28,7 +28,7 @@ import {
 
 
 // --- INICIALIZAÇÃO E CONFIGURAÇÃO DO FIREBASE ---
-c// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyBgIySTsWkoylC2WEUgF_EGzt3JVy3UHw0",
   authDomain: "lavanderia-clean-up.firebaseapp.com",
