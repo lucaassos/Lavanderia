@@ -196,9 +196,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- LÓGICA DE ORDENS DE SERVIÇO ---
     function resetNewOrderForm() {
         if(newOrderForm) newOrderForm.reset();
-        customerSearchInput.value = '';
-        selectedCustomerIdInput.value = '';
-        clientPhoneInput.value = '';
+        if(customerSearchInput) customerSearchInput.value = '';
+        if(selectedCustomerIdInput) selectedCustomerIdInput.value = '';
+        if(clientPhoneInput) clientPhoneInput.value = '';
         currentOrderItems = [];
         addServiceItem(); // Adiciona o primeiro item em branco
     }
@@ -462,7 +462,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
     });
-    
+
     function prepareAndPrintReceipt(order) {
         const entradaFmt = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(order.dataEntrada.toDate());
         const valorFmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.valorTotal || order.valor);
