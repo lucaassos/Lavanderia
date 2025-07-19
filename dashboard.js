@@ -13,7 +13,9 @@ import {
     where, 
     onSnapshot,
     orderBy,
-    Timestamp
+    Timestamp,
+    doc,
+    deleteDoc
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 
@@ -42,11 +44,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const endDateInput = document.getElementById('end-date');
     const grossRevenueEl = document.getElementById('gross-revenue');
     const totalExpensesEl = document.getElementById('total-expenses');
+    const totalCommissionEl = document.getElementById('total-commission');
     const netProfitEl = document.getElementById('net-profit');
     const newExpenseForm = document.getElementById('new-expense-form');
     const salesDetailsList = document.getElementById('sales-details-list');
     const expensesDetailsList = document.getElementById('expenses-details-list');
     const downloadReportBtn = document.getElementById('download-dashboard-report-btn');
+    const commissionToggleBtn = document.getElementById('commission-toggle-btn');
+    
+    // Modal de Confirmação
+    const confirmModal = document.getElementById('confirm-modal');
+    const confirmModalContent = document.getElementById('confirm-modal-content');
+    const confirmModalText = document.getElementById('confirm-modal-text');
+    const confirmCancelBtn = document.getElementById('confirm-cancel-btn');
+    const confirmOkBtn = document.getElementById('confirm-ok-btn');
 
     let allOrdersCache = [];
     let allExpensesCache = [];
@@ -54,6 +65,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentFilteredExpenses = [];
     let unsubscribeFromOrders = null;
     let unsubscribeFromExpenses = null;
+    let confirmCallback = null;
+    let commissionEnabled = false;
 
     // --- AUTENTICAÇÃO E CARREGAMENTO INICIAL ---
     onAuthStateChanged(auth, (user) => {
@@ -113,6 +126,12 @@ document.addEventListener('DOMContentLoaded', () => {
     startDateInput.addEventListener('change', updateDashboard);
     endDateInput.addEventListener('change', updateDashboard);
     if(downloadReportBtn) downloadReportBtn.addEventListener('click', downloadDashboardReport);
+    if(commissionToggleBtn) commissionToggleBtn.addEventListener('click', () => {
+        commissionEnabled = !commissionEnabled;
+        commissionToggleBtn.classList.toggle('btn-gradient');
+        commissionToggleBtn.classList.toggle('bg-gray-600');
+        updateDashboard();
+    });
 
     function setInitialDateRange() {
         const today = new Date().toISOString().split('T')[0];
@@ -137,10 +156,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const grossRevenue = currentFilteredSales.reduce((sum, order) => sum + (order.valorTotal || order.valor), 0);
         const totalExpenses = currentFilteredExpenses.reduce((sum, expense) => sum + expense.value, 0);
-        const netProfit = grossRevenue - totalExpenses;
+        const totalCommission = commissionEnabled ? currentFilteredSales.length * 10 : 0;
+        const netProfit = grossRevenue - totalExpenses - totalCommission;
 
         grossRevenueEl.textContent = formatCurrency(grossRevenue);
         totalExpensesEl.textContent = formatCurrency(totalExpenses);
+        totalCommissionEl.textContent = formatCurrency(totalCommission);
         netProfitEl.textContent = formatCurrency(netProfit);
         
         renderDetailsLists(currentFilteredSales, currentFilteredExpenses);
@@ -166,16 +187,58 @@ document.addEventListener('DOMContentLoaded', () => {
         if (expenses.length > 0) {
             expenses.forEach(expense => {
                 const item = document.createElement('div');
-                item.className = 'text-sm flex justify-between items-center';
+                item.className = 'text-sm flex justify-between items-center group';
                 item.innerHTML = `
                     <p class="text-gray-300">${expense.description}</p>
-                    <p class="font-semibold text-gray-200">${formatCurrency(expense.value)}</p>
+                    <div class="flex items-center gap-2">
+                        <p class="font-semibold text-gray-200">${formatCurrency(expense.value)}</p>
+                        <button data-id="${expense.id}" class="delete-expense-btn text-red-500/50 group-hover:text-red-500 transition-colors" title="Excluir Despesa">&times;</button>
+                    </div>
                 `;
                 expensesDetailsList.appendChild(item);
             });
         } else {
             expensesDetailsList.innerHTML = '<p class="text-sm text-gray-400">Nenhuma despesa no período.</p>';
         }
+    }
+    
+    // --- LÓGICA DE EXCLUSÃO DE DESPESA ---
+    document.body.addEventListener('click', async (e) => {
+        const deleteBtn = e.target.closest('.delete-expense-btn');
+        if (deleteBtn) {
+            const expenseId = deleteBtn.dataset.id;
+            showConfirm("Tem certeza que deseja excluir esta despesa?", async () => {
+                try {
+                    await deleteDoc(doc(db, 'expenses', expenseId));
+                } catch (error) {
+                    console.error("Erro ao excluir despesa:", error);
+                    alert("Erro ao excluir a despesa.");
+                }
+            });
+        }
+    });
+
+    function showConfirm(message, callback) {
+        if(confirmModalText) confirmModalText.textContent = message;
+        confirmCallback = callback;
+        openModal(confirmModal, confirmModalContent);
+    }
+    if(confirmCancelBtn) confirmCancelBtn.addEventListener('click', () => closeModal(confirmModal, confirmModalContent));
+    if(confirmOkBtn) confirmOkBtn.addEventListener('click', () => {
+        if (confirmCallback) confirmCallback();
+        closeModal(confirmModal, confirmModalContent);
+    });
+
+    function openModal(modal, content) {
+        if (!modal || !content) return;
+        modal.classList.remove('hidden');
+        setTimeout(() => content.classList.add('scale-100', 'opacity-100'), 10);
+    }
+
+    function closeModal(modal, content) {
+        if (!modal || !content) return;
+        content.classList.remove('scale-100', 'opacity-100');
+        setTimeout(() => modal.classList.add('hidden'), 200);
     }
     
     function downloadDashboardReport() {
@@ -186,7 +249,6 @@ document.addEventListener('DOMContentLoaded', () => {
         let csvContent = "data:text/csv;charset=utf-8,";
         csvContent += "Data,Tipo,Descricao,Valor\r\n";
 
-        // Adiciona vendas ao CSV
         currentFilteredSales.forEach(order => {
             const date = new Intl.DateTimeFormat('pt-BR').format(order.dataFinalizacao.toDate());
             const type = "Venda";
@@ -195,14 +257,22 @@ document.addEventListener('DOMContentLoaded', () => {
             csvContent += `${date},${type},${description},${value}\r\n`;
         });
         
-        // Adiciona despesas ao CSV
         currentFilteredExpenses.forEach(expense => {
             const date = new Intl.DateTimeFormat('pt-BR').format(expense.date.toDate());
             const type = "Despesa";
             const description = `"${expense.description}"`;
-            const value = `-${expense.value.toString().replace('.', ',')}`; // Valor negativo para despesa
+            const value = `-${expense.value.toString().replace('.', ',')}`;
             csvContent += `${date},${type},${description},${value}\r\n`;
         });
+        
+        if (commissionEnabled && currentFilteredSales.length > 0) {
+            const totalCommission = currentFilteredSales.length * 10;
+            const date = new Intl.DateTimeFormat('pt-BR').format(new Date());
+            const type = "Comissao";
+            const description = `"${currentFilteredSales.length} vendas"`;
+            const value = `-${totalCommission.toString().replace('.', ',')}`;
+            csvContent += `${date},${type},${description},${value}\r\n`;
+        }
 
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
