@@ -1,9 +1,4 @@
-/*
-  Arquivo de Scripts para o sistema Clean UP Shoes
-  Responsável pela interatividade da página de Ordens de Serviço.
-*/
 
-// --- IMPORTAÇÕES DO FIREBASE ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { 
     getAuth, 
@@ -27,8 +22,6 @@ import {
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 
-// --- INICIALIZAÇÃO E CONFIGURAÇÃO DO FIREBASE ---
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyBgIySTsWkoylC2WEUgF_EGzt3JVy3UHw0",
   authDomain: "lavanderia-clean-up.firebaseapp.com",
