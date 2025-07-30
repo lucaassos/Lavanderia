@@ -42,7 +42,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// --- ID DA CONTA DA LOJA (COMPARTILhado) ---
+// --- ID DA CONTA DA LOJA (COMPARTILHADO) ---
 const companyId = "oNor7X6GwkcgWtsvyL0Dg4tamwI3";
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -481,7 +481,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const fullDate = `Florianópolis, ${day} de ${month} de ${year}.`;
 
         const termHTML = `
-            <div style="font-family: Arial, sans-serif; width: 21cm; padding: 2cm; font-size: 12pt; color: #000; line-height: 1.5;">
+            <div style="font-family: Arial, sans-serif; width: 21cm; padding: 1.5cm; font-size: 12pt; color: #000; line-height: 1.5;">
                 <h2 style="text-align: center; font-weight: bold;">TERMO DE RESPONSABILIDADE – CLEAN UP SHOES</h2>
                 <p style="text-align: center; font-size: 10pt; margin-bottom: 2em;">
                     CNPJ: 51.192.646/0001-59<br>
@@ -508,9 +508,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 <h3 style="font-weight: bold; margin-top: 1em;">6. Autorização e Aceite</h3>
                 <p>Ao contratar o serviço e assinar este termo, o(a) CLIENTE autoriza a execução dos procedimentos de limpeza solicitados e confirma que leu, compreendeu e concorda integralmente com todas as cláusulas aqui descritas.</p>
                 
-                <p style="text-align: right; margin-top: 3em;">${fullDate}</p>
+                <p style="text-align: right; margin-top: 2em;">${fullDate}</p>
 
-                <div style="margin-top: 5em;">
+                <div style="margin-top: 3em;">
                     <p style="text-align: center;">_________________________________________</p>
                     <p style="text-align: center;">Assinatura do Cliente</p>
                     <p style="margin-top: 2em;"><strong>Nome Completo:</strong> ${order.nomeCliente}</p>
