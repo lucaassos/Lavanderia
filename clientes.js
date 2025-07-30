@@ -16,7 +16,6 @@ import {
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 
-// --- INICIALIZAÇÃO E CONFIGURAÇÃO DO FIREBASE ---
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyBgIySTsWkoylC2WEUgF_EGzt3JVy3UHw0",
@@ -25,6 +24,7 @@ const firebaseConfig = {
   storageBucket: "lavanderia-clean-up.firebasestorage.app",
   messagingSenderId: "6383817947",
   appId: "1:6383817947:web:9dca3543ad299afcd628fe",
+  measurementId: "G-QDB5FNBDWE"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -71,6 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const newCustomerData = {
             name: document.getElementById('new-customer-name').value,
             phone: document.getElementById('new-customer-phone').value,
+            cpf: document.getElementById('new-customer-cpf').value || "", // Adiciona o CPF
             ownerId: companyId
         };
 
@@ -89,7 +90,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const searchTerm = customerSearchInput.value.toLowerCase();
         const filtered = allCustomersCache.filter(customer => 
             customer.name.toLowerCase().includes(searchTerm) || 
-            customer.phone.toLowerCase().includes(searchTerm)
+            customer.phone.includes(searchTerm) ||
+            (customer.cpf && customer.cpf.includes(searchTerm))
         );
         renderCustomersTable(filtered);
     }
@@ -98,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if(!customersTableBody) return;
         customersTableBody.innerHTML = '';
         if (customers.length === 0) {
-            customersTableBody.innerHTML = '<tr><td colspan="2" class="p-4 text-center text-gray-400">Nenhum cliente encontrado.</td></tr>';
+            customersTableBody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-gray-400">Nenhum cliente encontrado.</td></tr>';
             return;
         }
 
@@ -108,6 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
             row.innerHTML = `
                 <td class="p-4 text-gray-200">${customer.name}</td>
                 <td class="p-4 text-gray-400">${customer.phone}</td>
+                <td class="p-4 text-gray-400">${customer.cpf || 'Não informado'}</td>
             `;
             customersTableBody.appendChild(row);
         });
