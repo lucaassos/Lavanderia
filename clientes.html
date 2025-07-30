@@ -54,6 +54,10 @@
                             <label for="new-customer-phone" class="block text-sm font-medium text-gray-400">Telefone</label>
                             <input type="tel" id="new-customer-phone" required class="w-full px-4 py-2 mt-1 text-gray-200 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500">
                         </div>
+                        <div>
+                            <label for="new-customer-cpf" class="block text-sm font-medium text-gray-400">CPF (opcional)</label>
+                            <input type="text" id="new-customer-cpf" class="w-full px-4 py-2 mt-1 text-gray-200 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500">
+                        </div>
                         <div class="flex justify-end pt-2">
                             <button type="submit" class="btn-gradient text-gray-900 px-6 py-2 rounded-lg hover:opacity-90 font-semibold shadow-md">Salvar Cliente</button>
                         </div>
@@ -62,13 +66,14 @@
             </div>
             <!-- Lista de Clientes -->
             <div class="md:col-span-2">
-                <input type="text" id="customer-search-input" placeholder="Buscar cliente..." class="w-full px-4 py-3 mb-4 text-lg text-gray-200 bg-gray-700/50 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500">
+                <input type="text" id="customer-search-input" placeholder="Buscar cliente por nome, telefone ou CPF..." class="w-full px-4 py-3 mb-4 text-lg text-gray-200 bg-gray-700/50 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500">
                 <div id="customers-table-container" class="bg-gray-900/50 rounded-lg border border-gray-700 overflow-hidden">
                     <table class="w-full">
                         <thead class="bg-gray-700/50">
                             <tr>
                                 <th class="p-4 text-left text-sm font-semibold text-gray-300">Nome</th>
                                 <th class="p-4 text-left text-sm font-semibold text-gray-300">Telefone</th>
+                                <th class="p-4 text-left text-sm font-semibold text-gray-300">CPF</th>
                             </tr>
                         </thead>
                         <tbody id="customers-table-body">
