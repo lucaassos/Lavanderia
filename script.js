@@ -27,15 +27,14 @@ import {
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+// --- INICIALIZAÇÃO E CONFIGURAÇÃO DO FIREBASE ---
 const firebaseConfig = {
-  apiKey: "AIzaSyBgIySTsWkoylC2WEUgF_EGzt3JVy3UHw0",
-  authDomain: "lavanderia-clean-up.firebaseapp.com",
-  projectId: "lavanderia-clean-up",
-  storageBucket: "lavanderia-clean-up.firebasestorage.app",
-  messagingSenderId: "6383817947",
-  appId: "1:6383817947:web:9dca3543ad299afcd628fe",
-  measurementId: "G-QDB5FNBDWE"
+  apiKey: "SUA_API_KEY",
+  authDomain: "SEU_AUTH_DOMAIN",
+  projectId: "SEU_PROJECT_ID",
+  storageBucket: "SEU_STORAGE_BUCKET",
+  messagingSenderId: "SEU_MESSAGING_SENDER_ID",
+  appId: "SEU_APP_ID"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -481,31 +480,31 @@ document.addEventListener('DOMContentLoaded', () => {
         const fullDate = `Florianópolis, ${day} de ${month} de ${year}.`;
 
         const termHTML = `
-            <div style="font-family: Arial, sans-serif; width: 21cm; padding: 1.5cm; font-size: 12pt; color: #000; line-height: 1.5;">
-                <h2 style="text-align: center; font-weight: bold;">TERMO DE RESPONSABILIDADE – CLEAN UP SHOES</h2>
-                <p style="text-align: center; font-size: 10pt; margin-bottom: 2em;">
+            <div style="font-family: Arial, sans-serif; width: 21cm; padding: 1.5cm; font-size: 10pt; color: #000; line-height: 1.4;">
+                <h2 style="text-align: center; font-weight: bold; font-size: 14pt;">TERMO DE RESPONSABILIDADE – CLEAN UP SHOES</h2>
+                <p style="text-align: center; font-size: 9pt; margin-bottom: 1.5em;">
                     CNPJ: 51.192.646/0001-59<br>
                     Endereço: Av. Gramal, 1521, sala 6 – Bairro Campeche, Florianópolis/SC<br>
                     CEP: 88063-080
                 </p>
                 <p>Pelo presente instrumento, o(a) CLIENTE declara estar ciente e de acordo com os termos e condições abaixo ao contratar os serviços de limpeza e higienização de calçados da CLEAN UP SHOES.</p>
                 
-                <h3 style="font-weight: bold; margin-top: 1em;">1. Avaliação Prévia</h3>
+                <h3 style="font-weight: bold; margin-top: 1em; font-size: 11pt;">1. Avaliação Prévia</h3>
                 <p>Todos os calçados recebidos são submetidos a uma avaliação técnica inicial. Nesta análise, são verificados o estado geral do item, os materiais de sua composição, costuras, colas, solado e a existência de eventuais avarias ou desgastes pré-existentes.</p>
                 
-                <h3 style="font-weight: bold; margin-top: 1em;">2. Riscos Inerentes ao Processo de Limpeza</h3>
+                <h3 style="font-weight: bold; margin-top: 1em; font-size: 11pt;">2. Riscos Inerentes ao Processo de Limpeza</h3>
                 <p>O(A) CLIENTE compreende que, em virtude da grande diversidade de materiais, corantes e técnicas de fabricação de calçados, alguns riscos são inerentes ao processo de limpeza. Podem ocorrer alterações de cor, textura, desbotamento, descolamento ou a aceleração de um desgaste natural, especialmente em artigos delicados, antigos, com customizações ou que já apresentem danos.</p>
                 
-                <h3 style="font-weight: bold; margin-top: 1em;">3. Garantia e Limitação de Responsabilidade</h3>
+                <h3 style="font-weight: bold; margin-top: 1em; font-size: 11pt;">3. Garantia e Limitação de Responsabilidade</h3>
                 <p>A CLEAN UP SHOES compromete-se a empregar as melhores técnicas profissionais e produtos adequados para a execução dos serviços. Contudo, não se responsabiliza por danos decorrentes de fragilidades, vícios ocultos ou problemas pré-existentes no calçado, que não sejam passíveis de identificação na avaliação prévia.</p>
                 
-                <h3 style="font-weight: bold; margin-top: 1em;">4. Prazos e Retirada do Item</h3>
+                <h3 style="font-weight: bold; margin-top: 1em; font-size: 11pt;">4. Prazos e Retirada do Item</h3>
                 <p>O prazo estimado para a conclusão do serviço será informado no momento do recebimento do calçado. Após a notificação de término, o(a) CLIENTE terá o prazo de 30 (trinta) dias corridos para realizar a retirada do item. Findo este período, a CLEAN UP SHOES isenta-se de qualquer responsabilidade sobre a guarda e conservação do calçado.</p>
                 
-                <h3 style="font-weight: bold; margin-top: 1em;">5. Objetos Pessoais</h3>
+                <h3 style="font-weight: bold; margin-top: 1em; font-size: 11pt;">5. Objetos Pessoais</h3>
                 <p>A CLEAN UP SHOES não se responsabiliza por quaisquer objetos ou acessórios deixados nos calçados, tais como palmilhas ortopédicas ou especiais, cadarços personalizados, pingentes, etiquetas, entre outros. Recomenda-se a remoção de todos os itens pessoais antes da entrega do calçado.</p>
                 
-                <h3 style="font-weight: bold; margin-top: 1em;">6. Autorização e Aceite</h3>
+                <h3 style="font-weight: bold; margin-top: 1em; font-size: 11pt;">6. Autorização e Aceite</h3>
                 <p>Ao contratar o serviço e assinar este termo, o(a) CLIENTE autoriza a execução dos procedimentos de limpeza solicitados e confirma que leu, compreendeu e concorda integralmente com todas as cláusulas aqui descritas.</p>
                 
                 <p style="text-align: right; margin-top: 2em;">${fullDate}</p>
@@ -513,7 +512,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div style="margin-top: 3em;">
                     <p style="text-align: center;">_________________________________________</p>
                     <p style="text-align: center;">Assinatura do Cliente</p>
-                    <p style="margin-top: 2em;"><strong>Nome Completo:</strong> ${order.nomeCliente}</p>
+                    <p style="margin-top: 1.5em;"><strong>Nome Completo:</strong> ${order.nomeCliente}</p>
                     <p><strong>CPF/RG:</strong> ${order.cpfCliente || 'Não informado'}</p>
                 </div>
             </div>
