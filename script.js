@@ -37,11 +37,12 @@ const firebaseConfig = {
   appId: "1:6383817947:web:9dca3543ad299afcd628fe",
   measurementId: "G-QDB5FNBDWE"
 };
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// --- ID DA CONTA DA LOJA (COMPARTILHADO) ---
+// --- ID DA CONTA DA LOJA (COMPARTILhado) ---
 const companyId = "oNor7X6GwkcgWtsvyL0Dg4tamwI3";
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -131,8 +132,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if(addOrderBtn) addOrderBtn.addEventListener('click', () => {
-        resetNewOrderForm();
         openModal(newOrderModal, modalContent);
+        resetNewOrderForm();
     });
     if(closeModalBtn) closeModalBtn.addEventListener('click', () => closeModal(newOrderModal, modalContent));
     if(cancelModalBtn) cancelModalBtn.addEventListener('click', () => closeModal(newOrderModal, modalContent));
@@ -473,31 +474,52 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     function prepareAndPrintReceipt(order) {
-        const entradaFmt = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(order.dataEntrada.toDate());
-        const valorFmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.valorTotal || order.valor);
+        const today = new Date();
+        const day = today.getDate();
+        const month = today.toLocaleString('pt-BR', { month: 'long' });
+        const year = today.getFullYear();
+        const fullDate = `Florianópolis, ${day} de ${month} de ${year}.`;
 
-        const itemsHtml = (order.items && Array.isArray(order.items)) ? order.items.map(item => 
-            `<p><strong>Serviço:</strong> ${item.service}<br><strong>Item:</strong> ${item.item}<br><strong>Valor:</strong> ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.price)}</p>`
-        ).join('<hr style="border: 0; border-top: 1px dashed #ccc; margin: 5px 0;">') : `<p><strong>Item:</strong> ${order.modeloTenis}</p>`;
+        const termHTML = `
+            <div style="font-family: Arial, sans-serif; width: 21cm; padding: 2cm; font-size: 12pt; color: #000; line-height: 1.5;">
+                <h2 style="text-align: center; font-weight: bold;">TERMO DE RESPONSABILIDADE – CLEAN UP SHOES</h2>
+                <p style="text-align: center; font-size: 10pt; margin-bottom: 2em;">
+                    CNPJ: 51.192.646/0001-59<br>
+                    Endereço: Av. Gramal, 1521, sala 6 – Bairro Campeche, Florianópolis/SC<br>
+                    CEP: 88063-080
+                </p>
+                <p>Pelo presente instrumento, o(a) CLIENTE declara estar ciente e de acordo com os termos e condições abaixo ao contratar os serviços de limpeza e higienização de calçados da CLEAN UP SHOES.</p>
+                
+                <h3 style="font-weight: bold; margin-top: 1em;">1. Avaliação Prévia</h3>
+                <p>Todos os calçados recebidos são submetidos a uma avaliação técnica inicial. Nesta análise, são verificados o estado geral do item, os materiais de sua composição, costuras, colas, solado e a existência de eventuais avarias ou desgastes pré-existentes.</p>
+                
+                <h3 style="font-weight: bold; margin-top: 1em;">2. Riscos Inerentes ao Processo de Limpeza</h3>
+                <p>O(A) CLIENTE compreende que, em virtude da grande diversidade de materiais, corantes e técnicas de fabricação de calçados, alguns riscos são inerentes ao processo de limpeza. Podem ocorrer alterações de cor, textura, desbotamento, descolamento ou a aceleração de um desgaste natural, especialmente em artigos delicados, antigos, com customizações ou que já apresentem danos.</p>
+                
+                <h3 style="font-weight: bold; margin-top: 1em;">3. Garantia e Limitação de Responsabilidade</h3>
+                <p>A CLEAN UP SHOES compromete-se a empregar as melhores técnicas profissionais e produtos adequados para a execução dos serviços. Contudo, não se responsabiliza por danos decorrentes de fragilidades, vícios ocultos ou problemas pré-existentes no calçado, que não sejam passíveis de identificação na avaliação prévia.</p>
+                
+                <h3 style="font-weight: bold; margin-top: 1em;">4. Prazos e Retirada do Item</h3>
+                <p>O prazo estimado para a conclusão do serviço será informado no momento do recebimento do calçado. Após a notificação de término, o(a) CLIENTE terá o prazo de 30 (trinta) dias corridos para realizar a retirada do item. Findo este período, a CLEAN UP SHOES isenta-se de qualquer responsabilidade sobre a guarda e conservação do calçado.</p>
+                
+                <h3 style="font-weight: bold; margin-top: 1em;">5. Objetos Pessoais</h3>
+                <p>A CLEAN UP SHOES não se responsabiliza por quaisquer objetos ou acessórios deixados nos calçados, tais como palmilhas ortopédicas ou especiais, cadarços personalizados, pingentes, etiquetas, entre outros. Recomenda-se a remoção de todos os itens pessoais antes da entrega do calçado.</p>
+                
+                <h3 style="font-weight: bold; margin-top: 1em;">6. Autorização e Aceite</h3>
+                <p>Ao contratar o serviço e assinar este termo, o(a) CLIENTE autoriza a execução dos procedimentos de limpeza solicitados e confirma que leu, compreendeu e concorda integralmente com todas as cláusulas aqui descritas.</p>
+                
+                <p style="text-align: right; margin-top: 3em;">${fullDate}</p>
 
-        const receiptHTML = `
-            <div style="font-family: 'Courier New', Courier, monospace; width: 280px; padding: 10px; font-size: 12px; color: #000; line-height: 1.4;">
-                <div style="text-align: center; margin-bottom: 10px;"><h2 style="font-family: 'Arial Black', Gadget, sans-serif; font-size: 16px; font-weight: bold; margin: 0;">Clean UP Shoes</h2><p style="margin: 0;">Comprovante de Serviço</p></div>
-                <hr style="border: 0; border-top: 1px dashed #000; margin: 10px 0;">
-                <p><strong>OS:</strong> ${order.id.substring(0, 6).toUpperCase()}</p>
-                <p><strong>Cliente:</strong> ${order.nomeCliente} ${order.cpfCliente ? `(${order.cpfCliente})` : ''}</p>
-                <p><strong>Telefone:</strong> ${order.telefoneCliente || 'Não informado'}</p>
-                <p><strong>Entrada:</strong> ${entradaFmt}</p>
-                <hr style="border: 0; border-top: 1px dashed #000; margin: 10px 0;">
-                ${itemsHtml}
-                ${order.observacoes ? `<hr style="border: 0; border-top: 1px dashed #000; margin: 10px 0;"><p><strong>Obs:</strong> ${order.observacoes}</p>` : ''}
-                <hr style="border: 0; border-top: 1px dashed #000; margin: 10px 0;">
-                <p style="font-size: 16px; text-align: right; font-weight: bold;">TOTAL: ${valorFmt}</p>
-                <hr style="border: 0; border-top: 1px dashed #000; margin: 10px 0;">
-                <p style="text-align: center; font-size: 10px;">Obrigado pela preferência!</p>
-            </div>`;
+                <div style="margin-top: 5em;">
+                    <p style="text-align: center;">_________________________________________</p>
+                    <p style="text-align: center;">Assinatura do Cliente</p>
+                    <p style="margin-top: 2em;"><strong>Nome Completo:</strong> ${order.nomeCliente}</p>
+                    <p><strong>CPF/RG:</strong> ${order.cpfCliente || 'Não informado'}</p>
+                </div>
+            </div>
+        `;
         
-        printArea.innerHTML = receiptHTML;
+        printArea.innerHTML = termHTML;
         window.print();
     }
 });
