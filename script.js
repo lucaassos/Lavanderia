@@ -1,4 +1,9 @@
+/*
+  Arquivo de Scripts para o sistema Clean UP Shoes
+  Responsável pela interatividade da página de Ordens de Serviço.
+*/
 
+// --- IMPORTAÇÕES DO FIREBASE ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { 
     getAuth, 
@@ -22,6 +27,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyBgIySTsWkoylC2WEUgF_EGzt3JVy3UHw0",
   authDomain: "lavanderia-clean-up.firebaseapp.com",
@@ -29,8 +35,8 @@ const firebaseConfig = {
   storageBucket: "lavanderia-clean-up.firebasestorage.app",
   messagingSenderId: "6383817947",
   appId: "1:6383817947:web:9dca3543ad299afcd628fe",
+  measurementId: "G-QDB5FNBDWE"
 };
-
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -78,6 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let allOrdersCache = [];
     let allCustomersCache = [];
     let currentOrderItems = [];
+    let selectedCustomerData = null;
 
     // --- LÓGICA DE AUTENTICAÇÃO ---
     onAuthStateChanged(auth, (user) => {
@@ -124,8 +131,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if(addOrderBtn) addOrderBtn.addEventListener('click', () => {
-        openModal(newOrderModal, modalContent);
         resetNewOrderForm();
+        openModal(newOrderModal, modalContent);
     });
     if(closeModalBtn) closeModalBtn.addEventListener('click', () => closeModal(newOrderModal, modalContent));
     if(cancelModalBtn) cancelModalBtn.addEventListener('click', () => closeModal(newOrderModal, modalContent));
@@ -169,6 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 item.textContent = customer.name;
                 item.dataset.id = customer.id;
                 item.dataset.phone = customer.phone;
+                item.dataset.cpf = customer.cpf || '';
                 customerSearchResults.appendChild(item);
             });
             customerSearchResults.classList.remove('hidden');
@@ -182,6 +190,12 @@ document.addEventListener('DOMContentLoaded', () => {
             customerSearchInput.value = e.target.textContent;
             selectedCustomerIdInput.value = e.target.dataset.id;
             clientPhoneInput.value = e.target.dataset.phone;
+            selectedCustomerData = {
+                id: e.target.dataset.id,
+                name: e.target.textContent,
+                phone: e.target.dataset.phone,
+                cpf: e.target.dataset.cpf
+            };
             customerSearchResults.classList.add('hidden');
         }
     });
@@ -192,6 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if(customerSearchInput) customerSearchInput.value = '';
         if(selectedCustomerIdInput) selectedCustomerIdInput.value = '';
         if(clientPhoneInput) clientPhoneInput.value = '';
+        selectedCustomerData = null;
         currentOrderItems = [];
         addServiceItem(); // Adiciona o primeiro item em branco
     }
@@ -298,8 +313,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if(newOrderForm) newOrderForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const customerId = selectedCustomerIdInput.value;
-        if (!customerId) return alert("Por favor, selecione um cliente da lista.");
+        if (!selectedCustomerData) return alert("Por favor, selecione um cliente da lista.");
         if (currentOrderItems.some(item => !item.service || !item.item)) {
             return alert("Por favor, preencha todos os campos de serviço e item.");
         }
@@ -307,9 +321,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const totalValue = currentOrderItems.reduce((sum, item) => sum + parseFloat(item.price || 0), 0);
 
         const newOrderData = {
-            customerId: customerId,
-            nomeCliente: customerSearchInput.value,
-            telefoneCliente: clientPhoneInput.value,
+            customerId: selectedCustomerData.id,
+            nomeCliente: selectedCustomerData.name,
+            telefoneCliente: selectedCustomerData.phone,
+            cpfCliente: selectedCustomerData.cpf || '',
             items: currentOrderItems,
             valorTotal: totalValue,
             observacoes: document.getElementById('observations').value,
@@ -470,7 +485,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div style="text-align: center; margin-bottom: 10px;"><h2 style="font-family: 'Arial Black', Gadget, sans-serif; font-size: 16px; font-weight: bold; margin: 0;">Clean UP Shoes</h2><p style="margin: 0;">Comprovante de Serviço</p></div>
                 <hr style="border: 0; border-top: 1px dashed #000; margin: 10px 0;">
                 <p><strong>OS:</strong> ${order.id.substring(0, 6).toUpperCase()}</p>
-                <p><strong>Cliente:</strong> ${order.nomeCliente}</p>
+                <p><strong>Cliente:</strong> ${order.nomeCliente} ${order.cpfCliente ? `(${order.cpfCliente})` : ''}</p>
                 <p><strong>Telefone:</strong> ${order.telefoneCliente || 'Não informado'}</p>
                 <p><strong>Entrada:</strong> ${entradaFmt}</p>
                 <hr style="border: 0; border-top: 1px dashed #000; margin: 10px 0;">
