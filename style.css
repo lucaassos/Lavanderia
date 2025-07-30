@@ -17,20 +17,31 @@ body {
     background-image: linear-gradient(to right, #84cc16, #a3e635);
 }
 
-/* Regras de Impressão:
-  Esconde tudo na página, exceto a área de impressão designada.
-*/
+/* Regras de Impressão: */
+@media screen {
+  /* Esconde a área de impressão apenas no ecrã */
+  #print-area {
+    display: none;
+  }
+}
+
 @media print {
-    body * {
-        visibility: hidden;
-    }
-    #print-area, #print-area * {
-        visibility: visible;
-    }
-    #print-area {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-    }
+  /* Esconde tudo o que não for a área de impressão */
+  body > *:not(#print-area) {
+    display: none;
+  }
+
+  /* Garante que a área de impressão e o seu conteúdo sejam visíveis */
+  #print-area, #print-area * {
+    display: block;
+    visibility: visible;
+  }
+
+  /* Posiciona a área de impressão para ocupar toda a página */
+  #print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
 }
